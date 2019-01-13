@@ -11,8 +11,8 @@ const motor = ({ enable, in1, in2 }) => {
    * @param {int} speed
    */
   function forward(speed) {
-    in1.digitalWrite(1);
-    in2.digitalWrite(0);
+    in1.digitalWrite(0);
+    in2.digitalWrite(1);
     enable.pwmWrite(constrain(speed, 0, 255));
   }
 
@@ -21,8 +21,8 @@ const motor = ({ enable, in1, in2 }) => {
    * @param {int} speed
    */
   function reverse(speed) {
-    in1.digitalWrite(0);
-    in2.digitalWrite(1);
+    in1.digitalWrite(1);
+    in2.digitalWrite(0);
     enable.pwmWrite(constrain(speed, 0, 255));
   }
 

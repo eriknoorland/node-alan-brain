@@ -4,6 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "remote": "node app.js state=0",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,6 +21,7 @@
     "express": "^4.16.4",
     "limiter": "^1.1.3",
     "node-rplidar": "github:eriknoorland/node-rplidar#master",
+    "pigpio": "^1.2.1",
     "socket.io": "^2.2.0"
   }
 }

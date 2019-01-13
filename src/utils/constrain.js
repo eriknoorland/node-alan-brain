@@ -8,3 +8,5 @@
 const constrain = (value, min, max) => {
   return Math.min(Math.max(parseInt(value), min), max);
 }
+
+module.exports = constrain;

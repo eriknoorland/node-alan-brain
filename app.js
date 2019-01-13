@@ -13,7 +13,7 @@ const Modes = require('./src/Modes');
 
 // const button = require('./src/controllers/button')(EventEmitter, Gpio);
 const motor = require('./src/controllers/motor');
-const motors = require('./src/controllers/motors');
+const motorController = require('./src/controllers/motors');
 // const buzzerController = require('./src/controllers/buzzer');
 // const rplidar = require('node-rplidar');
 // const pixy2 = require('node-pixy2-serial-json');
@@ -37,9 +37,9 @@ const wheelEncoderLeft = wheelEncoder({
 });
 
 const motorLeft = motor({
-  enable: new Gpio(17, { mode: Gpio.OUTPUT }),
-  in1: new Gpio(27, { mode: Gpio.OUTPUT }),
-  in2: new Gpio(22, { mode: Gpio.OUTPUT }),
+  enable: new Gpio(20, { mode: Gpio.OUTPUT }),
+  in1: new Gpio(21, { mode: Gpio.OUTPUT }),
+  in2: new Gpio(13, { mode: Gpio.OUTPUT }),
 });
 
 const wheelEncoderRight = wheelEncoder({
@@ -48,12 +48,12 @@ const wheelEncoderRight = wheelEncoder({
 });
 
 const motorRight = motor({
-  enable: new Gpio(20, { mode: Gpio.OUTPUT }),
-  in1: new Gpio(21, { mode: Gpio.OUTPUT }),
-  in2: new Gpio(13, { mode: Gpio.OUTPUT }),
+  enable: new Gpio(17, { mode: Gpio.OUTPUT }),
+  in1: new Gpio(27, { mode: Gpio.OUTPUT }),
+  in2: new Gpio(22, { mode: Gpio.OUTPUT }),
 });
 
-const motors = motors({
+const motors = motorController({
   motors: [motorLeft, motorRight],
   encoders: [wheelEncoderLeft, wheelEncoderRight],
 });

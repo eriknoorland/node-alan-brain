@@ -53,6 +53,7 @@ const motors = ({ motors, encoders }) => {
   return {
     forward,
     reverse,
+    rotate,
     stop,
   };
 };
