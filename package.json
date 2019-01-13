@@ -1,0 +1,25 @@
+{
+  "name": "allroundbot",
+  "version": "0.0.1",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eriknoorland/node-allroundBot.git"
+  },
+  "author": "Erik Noorland <mail@eriknoorland.nl> (eriknoorland.nl)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eriknoorland/node-allroundBot/issues"
+  },
+  "homepage": "https://github.com/eriknoorland/node-allroundBot#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "limiter": "^1.1.3",
+    "node-rplidar": "github:eriknoorland/node-rplidar#master",
+    "socket.io": "^2.2.0"
+  }
+}

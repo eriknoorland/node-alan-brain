@@ -1,0 +1,12 @@
+.log {
+  display: block;
+  padding: 5px;
+  width: 400px;
+  height: 400px;
+  background: #000;
+  border: 0;
+  color: #fff;
+  font-family: 'Courier New';
+  font-size: 11px;
+  overflow: hidden;
+}

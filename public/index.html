@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Telemetry</title>
+    <link rel="stylesheet" type="text/css" href="css/base.css">
+    <link rel="stylesheet" type="text/css" href="css/lidar.css">
+    <link rel="stylesheet" type="text/css" href="css/log.css">
+    <link rel="stylesheet" type="text/css" href="css/gamepad.css">
+  </head>
+  <body>
+    <canvas id="lidar" class="lidar" width="400" height="400"></canvas>
+    <pre id="log" class="log"></pre>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/vendor/chart.js"></script>
+    <script src="js/lidar.js"></script>
+    <script src="js/log.js"></script>
+    <script src="js/gamepad.js"></script>
+    <script>
+      // const ctx = document.getElementById('myChart').getContext('2d');
+      // const chart = new Chart(ctx, {
+      //   type: 'line',
+      //   data: {
+      //     labels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      //     datasets: [
+      //       {
+      //         label: 'RPM (left)',
+      //         // backgroundColor: 'rgb(255, 99, 132)',
+      //         borderColor: 'rgb(255, 0, 0)',
+      //         data: [0, 10, 5, 2, 20, 30, 45, 40, 30, 8, 44],
+      //       },
+      //       {
+      //         label: 'RPM (right)',
+      //         // backgroundColor: 'rgb(255, 99, 132)',
+      //         borderColor: 'rgb(0, 0, 255)',
+      //         data: [45, 40, 30, 8, 44, 0, 10, 5, 2, 20, 30],
+      //       },
+      //     ]
+      //   },
+      //   options: {},
+      // });
+
+      // setInterval(() => {
+      //   chart.data.datasets[0].data.push(Math.floor(Math.random() * 50));
+      //   chart.data.datasets[1].data.push(Math.floor(Math.random() * 50));
+      //   chart.data.datasets[0].data.shift();
+      //   chart.data.datasets[1].data.shift();
+      //   chart.update(0);
+      // }, 100);
+    </script>
+  </body>
+</html>
