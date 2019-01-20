@@ -8,7 +8,8 @@ const io = require('socket.io')(http);
 // const limiter = new RateLimiter(1, 250);
 
 const log = require('./src/utils/log')(io);
-const States = require('./src/States');
+const debounce = require('./src/utils/debounce');
+const States = require('./src/States')(EventEmitter, log, debounce);
 const Modes = require('./src/Modes');
 
 // const button = require('./src/controllers/button')(EventEmitter, Gpio);
@@ -18,33 +19,26 @@ const motorController = require('./src/controllers/motors');
 // const rplidar = require('node-rplidar');
 // const pixy2 = require('node-pixy2-serial-json');
 // const ultrasonic = require('./src/sensors/ultrasonic')(EventEmitter);
-const wheelEncoder = require('./src/sensors/wheelEncoder');
+const wheelEncoder = require('./src/sensors/wheelEncoder')(EventEmitter, Gpio);
 const parseArgvs = require('./src/utils/parseArgvs');
 const countdown = require('./src/utils/countdown');
 
 // const lidar = rplidar('/dev/ttyUSB0');
 
-const startDelay = 3000;
+const startDelay = 0;
 // const startButton = button({ pin: 4 });
 
 // const buzzer = buzzerController({
 //   trigger: '', // new Gpio('pin#', Gpio.OUTPUT),
 // });
 
-const wheelEncoderLeft = wheelEncoder({
-  encoderA: new Gpio(23, { mode: Gpio.INPUT }),
-  encoderB: new Gpio(24, { mode: Gpio.INPUT }),
-});
+const wheelEncoderLeft = wheelEncoder({ pinA: 19, pinB: 26 });
+const wheelEncoderRight = wheelEncoder({ pinA: 23, pinB: 24 });
 
 const motorLeft = motor({
   enable: new Gpio(20, { mode: Gpio.OUTPUT }),
   in1: new Gpio(21, { mode: Gpio.OUTPUT }),
   in2: new Gpio(13, { mode: Gpio.OUTPUT }),
-});
-
-const wheelEncoderRight = wheelEncoder({
-  encoderA: new Gpio(19, { mode: Gpio.INPUT }),
-  encoderB: new Gpio(26, { mode: Gpio.INPUT }),
 });
 
 const motorRight = motor({
@@ -73,6 +67,8 @@ const motors = motorController({
 //   echo: '', // new Gpio('pin#', { mode: Gpio.INPUT, alert: true }),
 // });
 
+let lastLoop = new Date();
+let interval;
 let state;
 
 app.use(express.static('public'));
@@ -88,6 +84,10 @@ io.on('connection', (socket) => {
     log('client-disconnected', 'telemetry', 'yellow');
     state.setSocket(null);
   });
+});
+
+process.on('beforeExit', () => {
+  motors.stop();
 });
 
 /**
@@ -108,6 +108,10 @@ const init = () => {
   const stateOptions = {
     controllers: { motors/*, buzzer*/ },
     sensors: {
+      encoders: [
+        wheelEncoderLeft,
+        wheelEncoderRight
+      ],
       // ultrasonic: {
       //   front: ultrasonicFront,
       //   left: ultrasonicLeft,
@@ -117,7 +121,7 @@ const init = () => {
     },
   };
 
-  state = States[stateIndex](log, stateOptions);
+  state = States[stateIndex](stateOptions);
 
   start();// startButton.on('press', start);
 };
@@ -132,7 +136,7 @@ const start = () => {
     .then(() => {
       log('start');
       state.start();
-      // start loop(s)
+      interval = setInterval(loop, 20);
       // show running status with active LED
     });
 };
@@ -143,7 +147,9 @@ const start = () => {
 const pause = () => {
   log('pause');
 
-  // stop loop(s)
+  // state.pause();
+  clearInterval(interval);
+
   // stop motors
   // stop sensor reading
   // show paused status with blinking LED
@@ -153,7 +159,11 @@ const pause = () => {
  * Loop
  */
 const loop = () => {
+  const thisLoop = new Date();
+  const fps = 1000 / (thisLoop - lastLoop);
+  
   state.loop();
+  lastLoop = thisLoop;
 };
 
 // Roll out!

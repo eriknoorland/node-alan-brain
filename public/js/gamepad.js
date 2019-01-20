@@ -168,6 +168,9 @@
       case 0: // cross
         socket.emit('stop');
         break;
+      case 1: // circle
+        // socket.emit('');
+        break;
       case 2: // square
         socket.emit('beep');
         break;

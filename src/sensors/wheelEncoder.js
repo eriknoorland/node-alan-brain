@@ -3,18 +3,37 @@
  * @param {Object} options
  * @return {Object}
  */
-const wheelEncoder = ({ encoderA, encoderB }) => {
-  /**
-   * Constructor
-   */
-  function constructor() {
-    encoderA.on('interrupt', console.log);
-    encoderB.on('interrupt', console.log);
-  }
+module.exports = (EventEmitter, Gpio) => {
+  return ({ pinA, pinB }) => {
+    const eventEmitter = new EventEmitter();
+    const gpioOptions = {
+      pullUpDown: Gpio.PUD_DOWN,
+      edge: Gpio.EITHER_EDGE,
+      mode: Gpio.INPUT,
+    };
 
-  constructor();
+    const encoderA = new Gpio(pinA, gpioOptions);
+    const encoderB = new Gpio(pinB, gpioOptions);
 
-  return {};
+    /**
+     * Constructor
+     */
+    function constructor() {
+      encoderA.on('interrupt', onInterrupt);
+      encoderB.on('interrupt', onInterrupt);
+    }
+
+    /**
+     * Interrupt event handler
+     */
+    function onInterrupt() {
+      eventEmitter.emit('tick');
+    }
+
+    constructor();
+
+    return {
+      on: eventEmitter.on.bind(eventEmitter),
+    };
+  };
 };
-
-module.exports = wheelEncoder;

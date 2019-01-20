@@ -2,49 +2,75 @@ const Modes = require('../Modes');
 
 /**
  * Remote
- * @param {Function} log
  * @param {Object} options
  * @return {Object}
  */
-const remote = (log, options) => {
-  const { controllers } = options;
-  const { motors/*, buzzer*/ } = controllers;
-  const mode = Modes.MANUAL;
+module.exports = (EventEmitter, log, debounce) => {
+  return (options) => {
+    const { controllers, sensors } = options;
+    const { motors/*, buzzer*/ } = controllers;
+    const { encoders } = sensors;
+    const mode = Modes.MANUAL;
+    const speed = 30;
 
-  /**
-   * Constructor
-   */
-  function constructor() {
-    log('constructor', 'remote');
-  }
-
-  /**
-   * Set Socket
-   * @param {Socket} socket
-   */
-  function setSocket(socket) {
-    log('setSocket', 'remote');
-    
-    if (!socket) {
-      return;
+    /**
+     * Constructor
+     */
+    function constructor() {
+      log('constructor', 'remote');
     }
 
-    socket.on('forward', motors.forward.bind(null, 150));
-    socket.on('reverse', motors.reverse.bind(null, 100));
-    socket.on('stop', motors.stop);
-    socket.on('rotateLeft', motors.rotate.bind(null, 90, 150, 'left'));
-    socket.on('rotateRight', motors.rotate.bind(null, 90, 150, 'right'));
-    // socket.on('beep', buzzer.beep);
-  }
+    /**
+     * Set Socket
+     * @param {Socket} socket
+     */
+    function setSocket(socket) {
+      log('setSocket', 'remote');
+      
+      if (!socket) {
+        return;
+      }
 
-  constructor();
+      socket.on('forward', debounce(forward, 50));
+      socket.on('reverse', debounce(reverse, 50));
+      socket.on('stop', debounce(stop, 50));
+      socket.on('rotateLeft', debounce(rotateLeft, 50));
+      socket.on('rotateRight', debounce(rotateRight, 50));
+      // socket.on('beep', buzzer.beep);
+    }
 
-  return {
-    mode,
-    setSocket,
-    start: () => {},
-    loop: () => {},
+    function forward() {
+      log('forward', 'remote');
+      motors.forward(speed);
+    }
+
+    function reverse() {
+      log('reverse', 'remote');
+      motors.reverse(speed);
+    }
+
+    function stop() {
+      log('stop', 'remote');
+      motors.stop();
+    }
+
+    function rotateLeft() {
+      log('rotateLeft', 'remote');
+      motors.rotate(90, speed, 'left');
+    }
+
+    function rotateRight() {
+      log('rotateRight', 'remote');
+      motors.rotate(90, speed, 'right');
+    }
+
+    constructor();
+
+    return {
+      mode,
+      setSocket,
+      start: () => {},
+      loop: () => {},
+    };
   };
 };
-
-module.exports = remote;

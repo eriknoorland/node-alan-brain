@@ -1,25 +1,14 @@
-const remote = require('./states/remote');
-const backAndForth = require('./states/backAndForth');
-const backAndForthSlalom = require('./states/backAndForthSlalom');
-const backAndForthSuperSlalom = require('./states/backAndForthSuperSlalom');
-const lineFollower = require('./states/lineFollower');
-const lineFollowerObstacle = require('./states/lineFollowerObstacle');
-const tTime = require('./states/tTime');
-const tTimeBonus = require('./states/tTimeBonus');
-const cans = require('./states/cans');
-const cansPickupAndReturn = require('./states/cansPickupAndReturn');
-
-const States = [
-  remote,
-  backAndForth,
-  backAndForthSlalom,
-  backAndForthSuperSlalom,
-  lineFollower,
-  lineFollowerObstacle,
-  tTime,
-  tTimeBonus,
-  cans,
-  cansPickupAndReturn,
-];
-
-module.exports = States;
+module.exports = (EventEmitter, log, debounce) => {
+  return [
+    require('./states/remote')(EventEmitter, log, debounce),
+    require('./states/backAndForth')(EventEmitter, log),
+    // require('./states/backAndForthSlalom')(EventEmitter),
+    // require('./states/backAndForthSuperSlalom')(EventEmitter),
+    // require('./states/lineFollower')(EventEmitter),
+    // require('./states/lineFollowerObstacle')(EventEmitter),
+    // require('./states/tTime')(EventEmitter),
+    // require('./states/tTimeBonus')(EventEmitter),
+    // require('./states/cans')(EventEmitter),
+    // require('./states/cansPickupAndReturn')(EventEmitter),
+  ];
+};
