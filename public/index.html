@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Telemetry</title>
+    <title>Alan's Telemetry</title>
     <link rel="stylesheet" type="text/css" href="css/base.css">
     <link rel="stylesheet" type="text/css" href="css/lidar.css">
     <link rel="stylesheet" type="text/css" href="css/log.css">
     <link rel="stylesheet" type="text/css" href="css/gamepad.css">
   </head>
   <body>
-    <canvas id="lidar" class="lidar" width="400" height="400"></canvas>
-    <pre id="log" class="log"></pre>
+    <div class="modules">
+      <pre id="log" class="module log"></pre>
+      <canvas id="lidar" class="module lidar" width="400" height="400"></canvas>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/vendor/chart.js"></script>
     <script src="js/lidar.js"></script>
     <script src="js/log.js"></script>
     <script src="js/gamepad.js"></script>
+    <script src="js/keyboard.js"></script>
     <script>
       // const ctx = document.getElementById('myChart').getContext('2d');
       // const chart = new Chart(ctx, {
