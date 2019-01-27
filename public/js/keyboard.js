@@ -1,4 +1,6 @@
 ((document, io) => {
+  const socket = io();
+  
   document.addEventListener('keydown', onKeyDown);
 
   function onKeyDown(event) {
