@@ -14,6 +14,12 @@
    */
   function bindEvents() {
     socket.on('log', onLog);
+    socket.on('disconnect', () => {
+      const disconnectMessage = '<span style="color: #f92472;">[app] terminated</span>';
+      const currentLog = logElement.innerHTML;
+      
+      logElement.innerHTML = [disconnectMessage, currentLog].join('\n');
+    });
   }
 
   /**

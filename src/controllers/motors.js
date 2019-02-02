@@ -42,10 +42,7 @@ const motors = ({ motors, encoders }) => {
   function stop() {
     motors[0].stop();
     motors[1].stop();
-
-    if (feedbackLoopInterval) {
-      clearInterval(feedbackLoopInterval);
-    }
+    clearFeedbackLoopInterval();
   }
 
   /**
@@ -55,22 +52,19 @@ const motors = ({ motors, encoders }) => {
    * @param {String} direction
    */
   function rotate(angle, speed, direction = 'left') {
-    const K = { Kp: 1, Ki: 0.01, Kd: 1 };
+    const K = { Kp: 0.5, Ki: 0.01, Kd: 0.05 };
     const motorLeftDirection = direction === 'left' ? 'reverse' : 'forward';
     const motorRightDirection = direction === 'right' ? 'reverse' : 'forward';
     const numTargetRotationTicks = Math.round(numFullRotationTicks / (360 / angle));
-    const numAcceptableTargetTicks = Math.floor(numTargetRotationTicks * 0.99);
-    const goal = Math.round((numTargetRotationTicks / 20) / 6);
+    const numAcceptableTargetTicks = Math.floor(numTargetRotationTicks * 0.925);
+    const goal = Math.round((numTargetRotationTicks / 20) / 4);
 
     let encoderCountLeft = 0;
     let encoderCountRight = 0;
 
-    if (feedbackLoopInterval) {
-      clearInterval(feedbackLoopInterval);
-    }
-
-    resetData(leftData);
-    resetData(rightData);
+    clearFeedbackLoopInterval();
+    leftData = resetData(leftData);
+    rightData = resetData(rightData);
 
     feedbackLoopInterval = setInterval(() => {
       encoderCountLeft += leftData.encoderCount;
@@ -98,12 +92,9 @@ const motors = ({ motors, encoders }) => {
     const K = { Kp: 2, Ki: 0.01, Kd: 1 };
     const goal = revolutionsPerSecond / 50;
 
-    if (feedbackLoopInterval) {
-      clearInterval(feedbackLoopInterval);
-    }
-
-    resetData(leftData);
-    resetData(rightData);
+    clearFeedbackLoopInterval();
+    leftData = resetData(leftData);
+    rightData = resetData(rightData);
 
     feedbackLoopInterval = setInterval(() => {
       leftData = { ...loop(K, goal, speed, loopTime, leftData), encoderCount: 0 };
@@ -162,6 +153,16 @@ const motors = ({ motors, encoders }) => {
       acc[key] = 0;
       return acc;
     }, {});
+  }
+
+  /**
+   * Clear and reset the feedback loop interval
+   */
+  function clearFeedbackLoopInterval() {
+    if (feedbackLoopInterval) {
+      clearInterval(feedbackLoopInterval);
+      feedbackLoopInterval = null;
+    }
   }
 
   constructor();
