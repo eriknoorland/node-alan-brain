@@ -9,7 +9,7 @@ module.exports = (EventEmitter, log, debounce) => {
   return (options) => {
     const { controllers, sensors } = options;
     const { motors/*, buzzer*/ } = controllers;
-    const { encoders } = sensors;
+    const { encoders, lidar } = sensors;
     const mode = Modes.MANUAL;
     const speed = 30;
 
@@ -18,6 +18,17 @@ module.exports = (EventEmitter, log, debounce) => {
      */
     function constructor() {
       log('constructor', 'remote');
+
+      // lidar.on('data', (data) => {
+      //   const { quality, angle, distance } = data;
+
+      //   if (quality > 10 && Math.floor(angle) === 0) {
+      //     if (distance < 200) {
+      //       motors.stop();
+      //       console.log(data);
+      //     }
+      //   }
+      // });
     }
 
     /**
@@ -41,27 +52,34 @@ module.exports = (EventEmitter, log, debounce) => {
 
     function forward() {
       log('forward', 'remote');
+      
       motors.forward(speed);
     }
 
     function reverse() {
       log('reverse', 'remote');
+      
       motors.reverse(speed);
     }
 
     function stop() {
       log('stop', 'remote');
+      
       motors.stop();
     }
 
     function rotateLeft() {
       log('rotateLeft', 'remote');
-      motors.rotate(90, speed, 'left');
+      
+      motors.rotate(90, speed, 'left')
+        .then(motors.stop);
     }
 
     function rotateRight() {
       log('rotateRight', 'remote');
-      motors.rotate(90, speed, 'right');
+
+      motors.rotate(90, speed, 'right')
+        .then(motors.stop);
     }
 
     constructor();

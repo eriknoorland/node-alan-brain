@@ -38,11 +38,15 @@ const motors = ({ motors, encoders }) => {
 
   /**
    * Stop
+   * @returns {Promise}
    */
   function stop() {
-    motors[0].stop();
-    motors[1].stop();
-    clearFeedbackLoopInterval();
+    return new Promise((resolve) => {
+      motors[0].stop();
+      motors[1].stop();
+      clearFeedbackLoopInterval();
+      resolve();
+    });
   }
 
   /**
@@ -50,37 +54,40 @@ const motors = ({ motors, encoders }) => {
    * @param {Number} angle
    * @param {Number} speed
    * @param {String} direction
+   * @returns {Promise}
    */
   function rotate(angle, speed, direction = 'left') {
-    const K = { Kp: 0.5, Ki: 0.01, Kd: 0.05 };
-    const motorLeftDirection = direction === 'left' ? 'reverse' : 'forward';
-    const motorRightDirection = direction === 'right' ? 'reverse' : 'forward';
-    const numTargetRotationTicks = Math.round(numFullRotationTicks / (360 / angle));
-    const numAcceptableTargetTicks = Math.floor(numTargetRotationTicks * 0.925);
-    const goal = Math.round((numTargetRotationTicks / 20) / 4);
+    return new Promise((resolve) => {
+      const K = { Kp: 0.5, Ki: 0.01, Kd: 0.05 };
+      const motorLeftDirection = direction === 'left' ? 'reverse' : 'forward';
+      const motorRightDirection = direction === 'right' ? 'reverse' : 'forward';
+      const numTargetRotationTicks = Math.round(numFullRotationTicks / (360 / angle));
+      const numAcceptableTargetTicks = Math.floor(numTargetRotationTicks * 0.925);
+      const goal = Math.round((numTargetRotationTicks / 20) / 4);
 
-    let encoderCountLeft = 0;
-    let encoderCountRight = 0;
+      let encoderCountLeft = 0;
+      let encoderCountRight = 0;
 
-    clearFeedbackLoopInterval();
-    leftData = resetData(leftData);
-    rightData = resetData(rightData);
+      clearFeedbackLoopInterval();
+      leftData = resetData(leftData);
+      rightData = resetData(rightData);
 
-    feedbackLoopInterval = setInterval(() => {
-      encoderCountLeft += leftData.encoderCount;
-      encoderCountRight += rightData.encoderCount;
+      feedbackLoopInterval = setInterval(() => {
+        encoderCountLeft += leftData.encoderCount;
+        encoderCountRight += rightData.encoderCount;
 
-      leftData = { ...loop(K, goal, speed, loopTime, leftData), encoderCount: 0 };
-      rightData = { ...loop(K, goal, speed, loopTime, rightData),  encoderCount: 0 };
+        leftData = { ...loop(K, goal, speed, loopTime, leftData), encoderCount: 0 };
+        rightData = { ...loop(K, goal, speed, loopTime, rightData),  encoderCount: 0 };
 
-      motors[0][motorLeftDirection](leftData.speed);
-      motors[1][motorRightDirection](rightData.speed);
+        motors[0][motorLeftDirection](leftData.speed);
+        motors[1][motorRightDirection](rightData.speed);
 
-      if (encoderCountLeft >= numAcceptableTargetTicks
-        || encoderCountRight >= numAcceptableTargetTicks) {
-        stop();
-      }
-    }, loopTime);
+        if (encoderCountLeft >= numAcceptableTargetTicks
+          || encoderCountRight >= numAcceptableTargetTicks) {
+          resolve();
+        }
+      }, loopTime);
+    });
   }
 
   /**

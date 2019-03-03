@@ -16,16 +16,16 @@ const Modes = require('./src/Modes');
 const motor = require('./src/controllers/motor');
 const motorController = require('./src/controllers/motors');
 // const buzzerController = require('./src/controllers/buzzer');
-// const rplidar = require('node-rplidar');
+const rplidar = require('node-rplidar');
 // const pixy2 = require('node-pixy2-serial-json');
 // const ultrasonic = require('./src/sensors/ultrasonic')(EventEmitter);
 const wheelEncoder = require('./src/sensors/wheelEncoder')(EventEmitter, Gpio);
 const parseArgvs = require('./src/utils/parseArgvs');
 const countdown = require('./src/utils/countdown');
 
-// const lidar = rplidar('/dev/ttyUSB0');
+const lidar = rplidar('/dev/ttyUSB0');
 
-const startDelay = 0;
+const startDelay = 3000;
 // const startButton = button({ pin: 4 });
 
 // const buzzer = buzzerController({
@@ -112,18 +112,30 @@ const init = () => {
         wheelEncoderLeft,
         wheelEncoderRight
       ],
+      lidar,
       // ultrasonic: {
       //   front: ultrasonicFront,
       //   left: ultrasonicLeft,
       //   right: ultrasonicRight,
       // },
-      // lidar,
     },
   };
 
+  lidar
+    .init()
+    .then(lidar.health)
+    .then((health) => {
+      log(`lidar health: ${health.status}`);
+
+      // 0 = good, 1 = warning, 2 = error
+      if (health.status === 0) {
+        lidar.scan();
+      }
+    });
+
   state = States[stateIndex](stateOptions);
 
-  start();// startButton.on('press', start);
+  start(); // startButton.on('press', start);
 };
 
 /**

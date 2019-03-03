@@ -5,16 +5,10 @@
  */
 module.exports = (EventEmitter, log) => {
   return (options) => {
-    const eventEmitter = new EventEmitter();
-    const frontWallDistance = 10; // cm
-    const actions = [
-      { method: solveStartVector },
-      { method: driveStraightUntil, arguments: [isWithinWallDistance] },
-      { method: uTurn },
-      { method: driveStraightUntil, arguments: [isWithinWallDistance] },
-    ];
-
-    let action;
+    const { controllers, sensors } = options;
+    const { motors/*, buzzer*/ } = controllers;
+    const { encoders, lidar } = sensors;
+    const frontWallDistance = 200; // mm
 
     /**
      * Constructor
@@ -27,48 +21,104 @@ module.exports = (EventEmitter, log) => {
      * Start
      */
     function start() {
-      nextAction();
+      solveStartVector()
+        .then(driveStraightUntil)
+        .then(stop)
+        .then(pause)
+        .then(uTurn)
+        .then(stop)
+        .then(pause)
+        .then(driveStraightUntil)
+        .then(stop)
+        .then(missionComplete);
     }
 
     /**
      * Loop
      */
     function loop() {
-      if (!action) {
-        eventEmitter.emit('pause');
-        return;
-      }
-
-      if (action.method.apply(null, action.arguments || [])) {
-        nextAction();
-      }
     }
 
+    /**
+     * Solve start vector
+     * @return {Promise}
+     */
     function solveStartVector() {
-      return true;
+      log('solveStartVector', 'backAndForth');
+
+      return new Promise((resolve) => {
+        resolve();
+      });
     }
 
-    function driveStraightUntil(callback) {
-      motors.forward(80);
+    /**
+     * Drive staright
+     * @return {Promise}
+     */
+    function driveStraightUntil() {
+      log('driveStraightUntil', 'backAndForth');
 
-      return callback();
+      return new Promise((resolve) => {
+        motors.forward(30);
+
+        lidar.on('data', (data) => {
+          isWithinWallDistance(data, resolve);
+        });
+      });
     }
 
-    function isWithinWallDistance() {
-      return false; // front distance < frontWallDistance
-    }
+    /**
+     * Resolves the straight driving promise when within the set wall distance
+     * @param {Object} data
+     * @param {Function} resolve
+     */
+    function isWithinWallDistance({ quality, angle, distance }, resolve) {
+      if (quality > 10 && Math.floor(angle) === 0) {
+        if (distance < frontWallDistance) {
+          log('distance < frontWallDistance', 'backAndForth');
 
-    function uTurn() {
-      // motors.rotate(180, 80, 'left');
-    }
-
-    function nextAction() {
-      if (!actions.length) {
-        action = null;
-        return;
+          resolve();
+        }
       }
+    }
 
-      action = actions.shift();
+    /**
+     * Rotate 180 degrees
+     * @return {Promise}
+     */
+    function uTurn() {
+      log('u-turn', 'backAndForth');
+
+      return motors.rotate(180, 30, 'left');
+    }
+
+    /**
+     * Stop
+     * @return {Promise}
+     */
+    function stop() {
+      log('stop', 'backAndForth');
+
+      return motors.stop();
+    }
+
+    /**
+     * Pause
+     * @return {Promise}
+     */
+    function pause() {
+      log('pause', 'backAndForth');
+
+      return new Promise((resolve) => {
+        setTimeout(resolve, 500);
+      });
+    }
+
+    /**
+     * Mission complete
+     */
+    function missionComplete() {
+      log('mission complete', 'backAndForth');
     }
 
     constructor();
