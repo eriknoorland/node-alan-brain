@@ -9,8 +9,8 @@ const io = require('socket.io')(http);
 
 const log = require('./src/utils/log')(io);
 const debounce = require('./src/utils/debounce');
-const States = require('./src/States')(EventEmitter, log, debounce);
-const Modes = require('./src/Modes');
+const parseArgvs = require('./src/utils/parseArgvs');
+const countdown = require('./src/utils/countdown');
 
 // const button = require('./src/controllers/button')(EventEmitter, Gpio);
 const motor = require('./src/controllers/motor')(Gpio);
@@ -20,8 +20,9 @@ const rplidar = require('node-rplidar');
 // const pixy2 = require('node-pixy2-serial-json');
 // const ultrasonic = require('./src/sensors/ultrasonic')(EventEmitter, Gpio);
 const wheelEncoder = require('./src/sensors/wheelEncoder')(EventEmitter, Gpio);
-const parseArgvs = require('./src/utils/parseArgvs');
-const countdown = require('./src/utils/countdown');
+
+const States = require('./src/States')(EventEmitter, log, debounce);
+const Modes = require('./src/Modes');
 
 const lidar = rplidar('/dev/ttyUSB0');
 // const startButton = button({ pin: 4 });
@@ -57,11 +58,6 @@ io.on('connection', (socket) => {
     log('client disconnected', 'telemetry', 'yellow');
     state.setSocket(null);
   });
-});
-
-process.on('beforeExit', () => {
-  clearInterval(interval);
-  motors.stop();
 });
 
 /**
@@ -159,6 +155,14 @@ const onLidarError = () => {
   log('Lidar error', 'error', 'red');
   process.exit(1);
 };
+
+/**
+ * Before exit event handler
+ */
+process.on('beforeExit', () => {
+  clearInterval(interval);
+  motors.stop();
+});
 
 // Roll out!
 http.listen(3000, init);
