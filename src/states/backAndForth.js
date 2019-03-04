@@ -1,3 +1,8 @@
+const solveStartVector = require('../utils/solveStartVector');
+const driveStraightUntil = require('../utils/driveStraightUntil');
+const isWithinDistance = require('../utils/isWithinDistance');
+const pause = require('../utils/pause');
+
 /**
  * BackAndForth
  * @param {Object} options
@@ -8,8 +13,7 @@ module.exports = (EventEmitter, log) => {
     const { controllers, sensors } = options;
     const { motors/*, buzzer*/ } = controllers;
     const { encoders, lidar } = sensors;
-    const frontWallDistance = 200; // mm
-
+    
     /**
      * Constructor
      */
@@ -21,97 +25,25 @@ module.exports = (EventEmitter, log) => {
      * Start
      */
     function start() {
-      solveStartVector()
-        .then(driveStraightUntil)
-        .then(stop)
-        .then(pause)
-        .then(uTurn)
-        .then(stop)
-        .then(pause)
-        .then(driveStraightUntil)
-        .then(stop)
+      const frontWallAngle = 0;
+      const frontWallDistance = 200;
+      const pauseTimeout = 500;
+      const speed = 30;
+      
+      const driveStraightCondition = isWithinDistance.bind(null, lidar, frontWallDistance, frontWallAngle);
+      const driveStraight = driveStraightUntil.bind(null, motors, speed, driveStraightCondition);
+      
+      solveStartVector(lidar, motors, speed)
+        .then(pause.bind(null, pauseTimeout))
+        .then(driveStraight)
+        .then(motors.stop)
+        .then(pause.bind(null, pauseTimeout))
+        .then(motors.rotate.bind(null, 180, 30, 'left'))
+        .then(motors.stop)
+        .then(pause.bind(null, pauseTimeout))
+        .then(driveStraight)
+        .then(motors.stop)
         .then(missionComplete);
-    }
-
-    /**
-     * Loop
-     */
-    function loop() {
-    }
-
-    /**
-     * Solve start vector
-     * @return {Promise}
-     */
-    function solveStartVector() {
-      log('solveStartVector', 'backAndForth');
-
-      return new Promise((resolve) => {
-        resolve();
-      });
-    }
-
-    /**
-     * Drive staright
-     * @return {Promise}
-     */
-    function driveStraightUntil() {
-      log('driveStraightUntil', 'backAndForth');
-
-      return new Promise((resolve) => {
-        motors.forward(30);
-
-        lidar.on('data', (data) => {
-          isWithinWallDistance(data, resolve);
-        });
-      });
-    }
-
-    /**
-     * Resolves the straight driving promise when within the set wall distance
-     * @param {Object} data
-     * @param {Function} resolve
-     */
-    function isWithinWallDistance({ quality, angle, distance }, resolve) {
-      if (quality > 10 && Math.floor(angle) === 0) {
-        if (distance < frontWallDistance) {
-          log('distance < frontWallDistance', 'backAndForth');
-
-          resolve();
-        }
-      }
-    }
-
-    /**
-     * Rotate 180 degrees
-     * @return {Promise}
-     */
-    function uTurn() {
-      log('u-turn', 'backAndForth');
-
-      return motors.rotate(180, 30, 'left');
-    }
-
-    /**
-     * Stop
-     * @return {Promise}
-     */
-    function stop() {
-      log('stop', 'backAndForth');
-
-      return motors.stop();
-    }
-
-    /**
-     * Pause
-     * @return {Promise}
-     */
-    function pause() {
-      log('pause', 'backAndForth');
-
-      return new Promise((resolve) => {
-        setTimeout(resolve, 500);
-      });
     }
 
     /**
@@ -125,7 +57,6 @@ module.exports = (EventEmitter, log) => {
 
     return {
       start,
-      loop,
     };
   };
 };

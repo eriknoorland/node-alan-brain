@@ -18,17 +18,13 @@ module.exports = (EventEmitter, log, debounce) => {
      */
     function constructor() {
       log('constructor', 'remote');
+    }
 
-      // lidar.on('data', (data) => {
-      //   const { quality, angle, distance } = data;
-
-      //   if (quality > 10 && Math.floor(angle) === 0) {
-      //     if (distance < 200) {
-      //       motors.stop();
-      //       console.log(data);
-      //     }
-      //   }
-      // });
+    /**
+     * Start
+     */
+    function start() {
+      log('start', 'remote');
     }
 
     /**
@@ -87,8 +83,7 @@ module.exports = (EventEmitter, log, debounce) => {
     return {
       mode,
       setSocket,
-      start: () => {},
-      loop: () => {},
+      start,
     };
   };
 };

@@ -13,80 +13,54 @@ const States = require('./src/States')(EventEmitter, log, debounce);
 const Modes = require('./src/Modes');
 
 // const button = require('./src/controllers/button')(EventEmitter, Gpio);
-const motor = require('./src/controllers/motor');
+const motor = require('./src/controllers/motor')(Gpio);
 const motorController = require('./src/controllers/motors');
 // const buzzerController = require('./src/controllers/buzzer');
 const rplidar = require('node-rplidar');
 // const pixy2 = require('node-pixy2-serial-json');
-// const ultrasonic = require('./src/sensors/ultrasonic')(EventEmitter);
+// const ultrasonic = require('./src/sensors/ultrasonic')(EventEmitter, Gpio);
 const wheelEncoder = require('./src/sensors/wheelEncoder')(EventEmitter, Gpio);
 const parseArgvs = require('./src/utils/parseArgvs');
 const countdown = require('./src/utils/countdown');
 
 const lidar = rplidar('/dev/ttyUSB0');
-
-const startDelay = 3000;
 // const startButton = button({ pin: 4 });
-
-// const buzzer = buzzerController({
-//   trigger: '', // new Gpio('pin#', Gpio.OUTPUT),
-// });
-
+// const buzzer = buzzerController({ triggerPin: 'pin#' });
+// const ultrasonicFront = ultrasonic({ triggerPin: 'pin#', echoPin: 'pin#' });
+// const ultrasonicLeft = ultrasonic({ triggerPin: 'pin#', echoPin: 'pin#' });
+// const ultrasonicRight = ultrasonic({ triggerPin: 'pin#', echoPin: 'pin#' });
 const wheelEncoderLeft = wheelEncoder({ pinA: 19, pinB: 26 });
 const wheelEncoderRight = wheelEncoder({ pinA: 23, pinB: 24 });
-
-const motorLeft = motor({
-  enable: new Gpio(20, { mode: Gpio.OUTPUT }),
-  in1: new Gpio(21, { mode: Gpio.OUTPUT }),
-  in2: new Gpio(13, { mode: Gpio.OUTPUT }),
-});
-
-const motorRight = motor({
-  enable: new Gpio(17, { mode: Gpio.OUTPUT }),
-  in1: new Gpio(27, { mode: Gpio.OUTPUT }),
-  in2: new Gpio(22, { mode: Gpio.OUTPUT }),
-});
-
+const motorLeft = motor({ enablePin: 20, in1Pin: 21, in2Pin: 13 });
+const motorRight = motor({ enablePin: 17, in1Pin: 27, in2Pin: 22 });
 const motors = motorController({
   motors: [motorLeft, motorRight],
   encoders: [wheelEncoderLeft, wheelEncoderRight],
 });
 
-// const ultrasonicFront = ultrasonic({
-//   trigger: '', // new Gpio('pin#', { mode: Gpio.OUTPUT }),
-//   echo: '', // new Gpio('pin#', { mode: Gpio.INPUT, alert: true }),
-// });
+const startTimeout = 3000;
 
-// const ultrasonicLeft = ultrasonic({
-//   trigger: '', // new Gpio('pin#', { mode: Gpio.OUTPUT }),
-//   echo: '', // new Gpio('pin#', { mode: Gpio.INPUT, alert: true }),
-// });
-
-// const ultrasonicRight = ultrasonic({
-//   trigger: '', // new Gpio('pin#', { mode: Gpio.OUTPUT }),
-//   echo: '', // new Gpio('pin#', { mode: Gpio.INPUT, alert: true }),
-// });
-
-let lastLoop = new Date();
+let lastTimestamp = new Date();
 let interval;
 let state;
 
 app.use(express.static('public'));
 
 io.on('connection', (socket) => {
-  log('client-connected', 'telemetry', 'green');
+  log('client connected', 'telemetry', 'green');
 
   if (state.mode === Modes.MANUAL) {
     state.setSocket(socket);
   }
 
   socket.on('disconnect', () => {
-    log('client-disconnected', 'telemetry', 'yellow');
+    log('client disconnected', 'telemetry', 'yellow');
     state.setSocket(null);
   });
 });
 
 process.on('beforeExit', () => {
+  clearInterval(interval);
   motors.stop();
 });
 
@@ -94,10 +68,10 @@ process.on('beforeExit', () => {
  * Init
  */
 const init = () => {
-  log('init');
-  log('server-started', 'telemetry');
-
   const args = parseArgvs(process.argv);
+
+  log('server started', 'telemetry', 'green');
+  log('init');
 
   if (!args.state) {
     log('State argument required', 'error', 'red');
@@ -108,10 +82,7 @@ const init = () => {
   const stateOptions = {
     controllers: { motors/*, buzzer*/ },
     sensors: {
-      encoders: [
-        wheelEncoderLeft,
-        wheelEncoderRight
-      ],
+      encoders: [wheelEncoderLeft, wheelEncoderRight],
       lidar,
       // ultrasonic: {
       //   front: ultrasonicFront,
@@ -121,61 +92,72 @@ const init = () => {
     },
   };
 
+  state = States[stateIndex](stateOptions);
+
   lidar
     .init()
     .then(lidar.health)
-    .then((health) => {
-      log(`lidar health: ${health.status}`);
-
-      // 0 = good, 1 = warning, 2 = error
-      if (health.status === 0) {
-        lidar.scan();
-      }
-    });
-
-  state = States[stateIndex](stateOptions);
-
-  start(); // startButton.on('press', start);
+    .then(onLidarHealth)
+    .catch(onLidarError);
 };
 
 /**
  * Start
  */
+const startCountdown = () => {
+  log('start countdown');
+
+  countdown(startTimeout, log)
+    .then(start);
+};
+
+/**
+ * Countdown complete handler 
+ */
 const start = () => {
-  log('start-countdown');
-
-  countdown(startDelay, log)
-    .then(() => {
-      log('start');
-      state.start();
-      interval = setInterval(loop, 20);
-      // show running status with active LED
-    });
-};
-
-/**
- * Pause
- */
-const pause = () => {
-  log('pause');
-
-  // state.pause();
-  clearInterval(interval);
-
-  // stop motors
-  // stop sensor reading
-  // show paused status with blinking LED
-};
-
-/**
- * Loop
- */
-const loop = () => {
-  const thisLoop = new Date();
-  const fps = 1000 / (thisLoop - lastLoop);
+  log('start');
   
-  state.loop();
-  lastLoop = thisLoop;
+  state.start();
+  interval = setInterval(fpsLoop, 20);
+  
+  // TODO show running status with active LED
+};
+
+/**
+ * FPS loop
+ */
+const fpsLoop = () => {
+  const currentTimestamp = new Date();
+  const fps = 1000 / (currentTimestamp - lastTimestamp);
+  
+  lastTimestamp = currentTimestamp;
+};
+
+/**
+ * Lidar health handler
+ * @param {Object} health
+ */
+const onLidarHealth = (health) => {
+  log(`lidar health: ${health.status}`);
+
+  // 0 = good, 1 = warning, 2 = error
+  if (health.status === 0) {
+    log('ready to roll!');
+    // TODO show ready status with LED
+
+    lidar.scan();
+    startCountdown(); // startButton.on('press', startCountdown);
+  } else {
+    onLidarError();
+  }
+};
+
+/**
+ * Lidar health error handler
+ */
+const onLidarError = () => {
+  log('Lidar error', 'error', 'red');
+  process.exit(1);
 };
 
 // Roll out!

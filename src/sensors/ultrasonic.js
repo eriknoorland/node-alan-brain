@@ -5,9 +5,11 @@ const MICROSECONDS_PER_CM = 1e6 / 34321;
  * @param {Object} options
  * @return {Object}
  */
-module.exports = (EventEmitter) => {
-  return ({ trigger, echo }) => {
+module.exports = (EventEmitter, Gpio) => {
+  return ({ triggerPin, echoPin }) => {
     const eventEmitter = new EventEmitter();
+    const trigger = new Gpio(triggerPin, { mode: Gpio.OUTPUT });
+    const echo = new Gpio(echoPin, { mode: Gpio.INPUT, alert: true });
     
     /**
      * Constructor
