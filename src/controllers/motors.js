@@ -4,7 +4,7 @@
  * @return {Object}
  */
 const motors = ({ motors, encoders }) => {
-  const revolutionsPerSecond = 1850; // depends on speed, voltage and type of motor
+  const numTicksPerSecond = 1850; // depends on speed, voltage and type of motor
   const numFullRotationTicks = 5397;
   const loopTime = 20;
 
@@ -62,8 +62,8 @@ const motors = ({ motors, encoders }) => {
       const motorLeftDirection = direction === 'left' ? 'reverse' : 'forward';
       const motorRightDirection = direction === 'right' ? 'reverse' : 'forward';
       const numTargetRotationTicks = Math.round(numFullRotationTicks / (360 / angle));
-      const numAcceptableTargetTicks = Math.floor(numTargetRotationTicks * 0.925);
-      const goal = Math.round((numTargetRotationTicks / 20) / 4);
+      const numAcceptableTargetTicks = Math.floor(numTargetRotationTicks * 0.975);
+      const goal = 10;
 
       let encoderCountLeft = 0;
       let encoderCountRight = 0;
@@ -97,7 +97,7 @@ const motors = ({ motors, encoders }) => {
    */
   function straight(speed, direction = 'forward') {
     const K = { Kp: 2, Ki: 0.01, Kd: 1 };
-    const goal = revolutionsPerSecond / 50;
+    const goal = 25; // numTicksPerSecond / 50;
 
     clearFeedbackLoopInterval();
     leftData = resetData(leftData);

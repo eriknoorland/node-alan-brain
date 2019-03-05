@@ -11,7 +11,7 @@ module.exports = (EventEmitter, log, debounce) => {
     const { motors/*, buzzer*/ } = controllers;
     const { encoders, lidar } = sensors;
     const mode = Modes.MANUAL;
-    const speed = 30;
+    const speed = 0;
 
     /**
      * Constructor

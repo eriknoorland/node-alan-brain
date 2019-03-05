@@ -26,9 +26,9 @@ module.exports = (EventEmitter, log) => {
      */
     function start() {
       const frontWallAngle = 0;
-      const frontWallDistance = 200;
+      const frontWallDistance = 300;
       const pauseTimeout = 500;
-      const speed = 30;
+      const speed = 0;
       
       const driveStraightCondition = isWithinDistance.bind(null, lidar, frontWallDistance, frontWallAngle);
       const driveStraight = driveStraightUntil.bind(null, motors, speed, driveStraightCondition);

@@ -4,10 +4,16 @@
  * @param {Function} resolve
  */
 const isWithinDistance = (lidar, allowedDistance, checkAngle, resolve) => {
+  let count = 0;
+
   lidar.on('data', ({ quality, angle, distance }) => {
     if (quality > 10 && Math.floor(angle) === checkAngle) {
       if (distance < allowedDistance) {
-        resolve();
+        count += 1;
+
+        if (count % 3 === 0) {
+          resolve();
+        }
       }
     }
   });
