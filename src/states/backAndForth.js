@@ -28,17 +28,16 @@ module.exports = (EventEmitter, log) => {
       const frontWallAngle = 0;
       const frontWallDistance = 300;
       const pauseTimeout = 500;
-      const speed = 0;
       
       const driveStraightCondition = isWithinDistance.bind(null, lidar, frontWallDistance, frontWallAngle);
-      const driveStraight = driveStraightUntil.bind(null, motors, speed, driveStraightCondition);
+      const driveStraight = driveStraightUntil.bind(null, motors, driveStraightCondition);
       
-      solveStartVector(lidar, motors, speed)
+      solveStartVector(lidar, motors)
         .then(pause.bind(null, pauseTimeout))
         .then(driveStraight)
         .then(motors.stop)
         .then(pause.bind(null, pauseTimeout))
-        .then(motors.rotate.bind(null, 180, 30, 'left'))
+        .then(motors.rotate.bind(null, 180, 'left'))
         .then(motors.stop)
         .then(pause.bind(null, pauseTimeout))
         .then(driveStraight)

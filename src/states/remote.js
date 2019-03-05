@@ -11,7 +11,6 @@ module.exports = (EventEmitter, log, debounce) => {
     const { motors/*, buzzer*/ } = controllers;
     const { encoders, lidar } = sensors;
     const mode = Modes.MANUAL;
-    const speed = 0;
 
     /**
      * Constructor
@@ -48,33 +47,30 @@ module.exports = (EventEmitter, log, debounce) => {
 
     function forward() {
       log('forward', 'remote');
-      
-      motors.forward(speed);
+      motors.forward();
     }
 
     function reverse() {
       log('reverse', 'remote');
-      
-      motors.reverse(speed);
+      motors.reverse();
     }
 
     function stop() {
       log('stop', 'remote');
-      
       motors.stop();
     }
 
     function rotateLeft() {
       log('rotateLeft', 'remote');
       
-      motors.rotate(90, speed, 'left')
+      motors.rotate(90, 'left')
         .then(motors.stop);
     }
 
     function rotateRight() {
       log('rotateRight', 'remote');
 
-      motors.rotate(90, speed, 'right')
+      motors.rotate(90, 'right')
         .then(motors.stop);
     }
 

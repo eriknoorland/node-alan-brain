@@ -1,13 +1,12 @@
 /**
  * Drive straight
  * @param {Object} motors
- * @param {int} speed
  * @param {Function} checkCondition
  * @return {Promise}
  */
-const driveStraightUntil = (motors, speed, checkCondition) => {
+const driveStraightUntil = (motors, checkCondition) => {
   return new Promise((resolve) => {
-    motors.forward(speed);
+    motors.forward();
     checkCondition(resolve);
   });
 };

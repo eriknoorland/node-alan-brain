@@ -27,15 +27,14 @@ const decideAngle = (measurements) => {
 /**
  * Rotate
  * @param {Object} motors
- * @param {int} speed
  * @param {int} angle
  * @param {String} direction
  * @param {Object} measurements
  * @return {Promise}
  */
-const rotate = (motors, speed, angle, direction, measurements = {}) => {
+const rotate = (motors, angle, direction, measurements = {}) => {
   return new Promise((resolve) => {
-    motors.rotate(angle, speed, direction)
+    motors.rotate(angle, direction)
       .then(motors.stop)
       .then(() => resolve(measurements));
   });
@@ -45,19 +44,18 @@ const rotate = (motors, speed, angle, direction, measurements = {}) => {
  * Solve start vector
  * @param {Object} lidar
  * @param {Object} motors
- * @param {int} speed
  * @return {Promise}
  */
-const solveStartVector = (lidar, motors, speed) => {
+const solveStartVector = (lidar, motors) => {
   return new Promise((resolve) => {
     scan(lidar, scanDuration, 0, {})
-      .then(rotate.bind(null, motors, speed, scanRotationOffset, 'right'))
+      .then(rotate.bind(null, motors, scanRotationOffset, 'right'))
       .then(scan.bind(null, lidar, scanDuration, scanRotationOffset))
-      .then(rotate.bind(null, motors, speed, scanRotationOffset * 2, 'left'))
+      .then(rotate.bind(null, motors, scanRotationOffset * 2, 'left'))
       .then(scan.bind(null, lidar, scanDuration, -scanRotationOffset))
       .then(averageMeasurements)
       .then(decideAngle)
-      .then(({ angle, direction }) => rotate(motors, speed, angle, direction))
+      .then(({ angle, direction }) => rotate(motors, angle, direction))
       .then(resolve);
   });
 };

@@ -4,7 +4,7 @@
  * @return {Object}
  */
 const motors = ({ motors, encoders }) => {
-  const numTicksPerSecond = 1850; // depends on speed, voltage and type of motor
+  const numTicksPerSecond = 1850;
   const numFullRotationTicks = 5397;
   const loopTime = 20;
 
@@ -22,18 +22,16 @@ const motors = ({ motors, encoders }) => {
 
   /**
    * Forward
-   * @param {Number} speed
    */
-  function forward(speed) {
-    straight(speed, 'forward');
+  function forward() {
+    straight('forward');
   }
 
   /**
    * Reverse
-   * @param {Number} speed
    */
-  function reverse(speed) {
-    straight(speed, 'reverse');
+  function reverse() {
+    straight('reverse');
   }
 
   /**
@@ -52,11 +50,10 @@ const motors = ({ motors, encoders }) => {
   /**
    * Rotate
    * @param {Number} angle
-   * @param {Number} speed
    * @param {String} direction
    * @returns {Promise}
    */
-  function rotate(angle, speed, direction = 'left') {
+  function rotate(angle, direction = 'left') {
     return new Promise((resolve) => {
       const K = { Kp: 0.5, Ki: 0.01, Kd: 0.05 };
       const motorLeftDirection = direction === 'left' ? 'reverse' : 'forward';
@@ -76,8 +73,8 @@ const motors = ({ motors, encoders }) => {
         encoderCountLeft += leftData.encoderCount;
         encoderCountRight += rightData.encoderCount;
 
-        leftData = { ...loop(K, goal, speed, loopTime, leftData), encoderCount: 0 };
-        rightData = { ...loop(K, goal, speed, loopTime, rightData),  encoderCount: 0 };
+        leftData = { ...loop(K, goal, loopTime, leftData), encoderCount: 0 };
+        rightData = { ...loop(K, goal, loopTime, rightData),  encoderCount: 0 };
 
         motors[0][motorLeftDirection](leftData.speed);
         motors[1][motorRightDirection](rightData.speed);
@@ -92,10 +89,9 @@ const motors = ({ motors, encoders }) => {
 
   /**
    * Straight
-   * @param {Number} speed
    * @param {String} direction
    */
-  function straight(speed, direction = 'forward') {
+  function straight(direction = 'forward') {
     const K = { Kp: 2, Ki: 0.01, Kd: 1 };
     const goal = 25; // numTicksPerSecond / 50;
 
@@ -104,8 +100,8 @@ const motors = ({ motors, encoders }) => {
     rightData = resetData(rightData);
 
     feedbackLoopInterval = setInterval(() => {
-      leftData = { ...loop(K, goal, speed, loopTime, leftData), encoderCount: 0 };
-      rightData = { ...loop(K, goal, speed, loopTime, rightData),  encoderCount: 0 };
+      leftData = { ...loop(K, goal, loopTime, leftData), encoderCount: 0 };
+      rightData = { ...loop(K, goal, loopTime, rightData),  encoderCount: 0 };
 
       motors[0][direction](leftData.speed);
       motors[1][direction](rightData.speed);
@@ -116,16 +112,15 @@ const motors = ({ motors, encoders }) => {
    * Feedback loop
    * @param {Object} K
    * @param {Number} goal
-   * @param {Number} speed
    * @param {Number} loopTime
    * @param {Object} data
    * @return {Object}
    */
-  function loop(K, goal, speed, loopTime, { encoderCount, lastError, iAcc }) {
+  function loop(K, goal, loopTime, { encoderCount, lastError, iAcc }) {
     const { p, i, d, error } = pid(K, goal, encoderCount, lastError, loopTime, iAcc);
 
     return {
-      speed: speed + (p + i + d),
+      speed: (p + i + d),
       lastError: error,
       iAcc: i,
     };
