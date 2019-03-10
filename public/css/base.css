@@ -54,15 +54,23 @@ table {
 }
 
 body {
+  font-family: Helvetica, sans-serif;
+  font-size: 14px;
   background: #ccc;
 }
 
 .modules {
   display: flex;
+  flex-wrap: wrap;
 }
 
 .module {
   margin: 20px 0 0 20px;
-  width: 400px;
-  height: 400px;
+  width: 400px !important;
+  height: 400px !important;
+  background: #fff;
+}
+
+.module--padding {
+  padding: 20px;
 }

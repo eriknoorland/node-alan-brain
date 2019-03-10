@@ -7,14 +7,16 @@ const io = require('socket.io')(http);
 // const RateLimiter = require('limiter').RateLimiter;
 // const limiter = new RateLimiter(1, 250);
 
+const config = require('./src/config');
 const log = require('./src/utils/log')(io);
 const debounce = require('./src/utils/debounce');
 const parseArgvs = require('./src/utils/parseArgvs');
 const countdown = require('./src/utils/countdown');
 
+const telemetryController = require('./src/controllers/telemetry')(io, config);
 // const button = require('./src/controllers/button')(EventEmitter, Gpio);
 const motor = require('./src/controllers/motor')(Gpio);
-const motorController = require('./src/controllers/motors');
+const motorController = require('./src/controllers/motors')(config);
 // const buzzerController = require('./src/controllers/buzzer');
 const rplidar = require('node-rplidar');
 // const pixy2 = require('node-pixy2-serial-json');
@@ -39,7 +41,12 @@ const motors = motorController({
   encoders: [wheelEncoderLeft, wheelEncoderRight],
 });
 
-const startTimeout = 3000;
+const telemetry = telemetryController({
+  sensors: {
+    encoders: [wheelEncoderLeft, wheelEncoderRight],
+    lidar,
+  },
+});
 
 let lastTimestamp = new Date();
 let interval;
@@ -103,7 +110,7 @@ const init = () => {
 const startCountdown = () => {
   log('start countdown');
 
-  countdown(startTimeout, log)
+  countdown(config.startTimeout, log)
     .then(start);
 };
 
@@ -114,7 +121,7 @@ const start = () => {
   log('start');
   
   state.start();
-  interval = setInterval(fpsLoop, 20);
+  interval = setInterval(fpsLoop, config.loopTime);
   
   // TODO show running status with active LED
 };

@@ -8,7 +8,7 @@ const isWithinDistance = (lidar, allowedDistance, checkAngle, resolve) => {
 
   lidar.on('data', ({ quality, angle, distance }) => {
     if (quality > 10 && Math.floor(angle) === checkAngle) {
-      if (distance < allowedDistance) {
+      if (distance > 0 && distance < allowedDistance) {
         count += 1;
 
         if (count % 3 === 0) {

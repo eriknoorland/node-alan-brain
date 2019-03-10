@@ -12,7 +12,7 @@ module.exports = (EventEmitter, log) => {
   return (options) => {
     const { controllers, sensors } = options;
     const { motors/*, buzzer*/ } = controllers;
-    const { encoders, lidar } = sensors;
+    const { lidar } = sensors;
     
     /**
      * Constructor
@@ -32,9 +32,10 @@ module.exports = (EventEmitter, log) => {
       const driveStraightCondition = isWithinDistance.bind(null, lidar, frontWallDistance, frontWallAngle);
       const driveStraight = driveStraightUntil.bind(null, motors, driveStraightCondition);
       
-      solveStartVector(lidar, motors)
-        .then(pause.bind(null, pauseTimeout))
-        .then(driveStraight)
+      // solveStartVector(lidar, motors)
+      //   .then(pause.bind(null, pauseTimeout))
+      //   .then(driveStraight)
+      driveStraight()
         .then(motors.stop)
         .then(pause.bind(null, pauseTimeout))
         .then(motors.rotate.bind(null, 180, 'left'))
