@@ -1,5 +1,4 @@
-((document, io) => {
-  const socket = io();
+((document, socket) => {
   const element = document.getElementById('fps');
 
   /**
@@ -24,4 +23,4 @@
   }
 
   init();
-})(document, window.io);
+})(document, window.socket);

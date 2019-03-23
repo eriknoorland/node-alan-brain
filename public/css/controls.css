@@ -1,0 +1,35 @@
+.controls {
+
+}
+
+.controls__select {
+  margin: 0 5px 0 0;
+  padding: 5px 10px;
+  border-radius: 0;
+  border-color: #ccc;
+  outline: 0;
+  -webkit-appearance: none;
+}
+
+.controls__button {
+  margin: 0 5px 0 0;
+  padding: 5px 10px;
+  outline: 0;
+  -webkit-appearance: none;
+}
+
+.controls__button:last-child {
+  margin: 0;
+}
+
+.controls__button--start {
+  border-color: #c3e6cb;
+  background: #d4edda;
+  color: #155724;
+}
+
+.controls__button--stop {
+  border-color: #f8d7da;
+  background: #f5c6cb;
+  color: #721c24;
+}

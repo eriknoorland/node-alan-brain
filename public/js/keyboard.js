@@ -1,28 +1,26 @@
-((document, io) => {
-  const socket = io();
-  
+((document, socket) => {
   document.addEventListener('keydown', onKeyDown);
 
   function onKeyDown(event) {
     switch (event.keyCode) {
       case 32: // spacebar
-        socket.emit('stop');
+        socket.emit('remote.stop');
         break;
       case 66: // b
-        socket.emit('beep');
+        socket.emit('remote.beep');
         break;
       case 38: // arrow up
-        socket.emit('forward');
+        socket.emit('remote.forward');
         break;
       case 40: // arrow down
-        socket.emit('reverse');
+        socket.emit('remote.reverse');
         break;
       case 37: // arrow left
-        socket.emit('rotateLeft');
+        socket.emit('remote.rotateLeft');
         break;
       case 39: // arrow right
-        socket.emit('rotateRight');
+        socket.emit('remote.rotateRight');
         break;
     }
   }
-})(document, window.io);
+})(document, window.socket);

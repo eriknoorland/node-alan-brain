@@ -4,58 +4,67 @@
     <title>Alan's Telemetry</title>
     <link rel="stylesheet" type="text/css" href="css/base.css">
     <link rel="stylesheet" type="text/css" href="css/lidar.css">
+    <link rel="stylesheet" type="text/css" href="css/imu.css">
     <link rel="stylesheet" type="text/css" href="css/log.css">
+    <link rel="stylesheet" type="text/css" href="css/controls.css">
     <link rel="stylesheet" type="text/css" href="css/gamepad.css">
   </head>
   <body>
+    <header class="header">
+      <div class="header__module logo">
+        Alan
+      </div>
+
+      <div class="header__module controls">
+        <select class="controls__select" data-js-controls-stateSelect>
+          <option disabled selected>Select state</option>
+          <option value="0">Remote</option>
+          <option value="1">Back and forth</option>
+          <option value="2">Back and forth slalom</option>
+          <option value="3">Back and forth super slalom</option>
+          <option value="4">Linefollower</option>
+          <option value="5">Linefollower obstacle</option>
+          <option value="6">T-time</option>
+          <option value="7">T-time bonus</option>
+          <option value="8">Cans</option>
+          <option value="9">Cans pickup and return</option>
+        </select>
+
+        <button class="controls__button controls__button--start" data-js-controls-startButton>
+          Start
+        </button>
+
+        <button class="controls__button controls__button--stop" data-js-controls-stopButton>
+          Stop
+        </button>
+      </div>
+
+      <div id="fps" class="header__module fps"></div>
+    </header>
+
     <div class="modules">
       <pre id="log" class="module log"></pre>
-      
-      <div class="module module--padding">
-        <div id="fps" class="fps"></div>
-      </div>
-      
+
       <canvas id="lidar" class="module lidar" width="400" height="400"></canvas>
+
+      <div class="module imu">
+        <canvas id="imu" width="400" height="400"></canvas>
+        <div id="heading" class="heading"></div>
+      </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/vendor/chart.js"></script>
+
+    <script>
+      window.socket = io();
+    </script>
+
+    <script src="js/controls.js"></script>
     <script src="js/fps.js"></script>
+    <script src="js/imu.js"></script>
     <script src="js/lidar.js"></script>
     <script src="js/log.js"></script>
     <script src="js/gamepad.js"></script>
     <script src="js/keyboard.js"></script>
-    <script>
-      // const ctx = document.getElementById('myChart').getContext('2d');
-      // const chart = new Chart(ctx, {
-      //   type: 'line',
-      //   data: {
-      //     labels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      //     datasets: [
-      //       {
-      //         label: 'RPM (left)',
-      //         // backgroundColor: 'rgb(255, 99, 132)',
-      //         borderColor: 'rgb(255, 0, 0)',
-      //         data: [0, 10, 5, 2, 20, 30, 45, 40, 30, 8, 44],
-      //       },
-      //       {
-      //         label: 'RPM (right)',
-      //         // backgroundColor: 'rgb(255, 99, 132)',
-      //         borderColor: 'rgb(0, 0, 255)',
-      //         data: [45, 40, 30, 8, 44, 0, 10, 5, 2, 20, 30],
-      //       },
-      //     ]
-      //   },
-      //   options: {},
-      // });
-
-      // setInterval(() => {
-      //   chart.data.datasets[0].data.push(Math.floor(Math.random() * 50));
-      //   chart.data.datasets[1].data.push(Math.floor(Math.random() * 50));
-      //   chart.data.datasets[0].data.shift();
-      //   chart.data.datasets[1].data.shift();
-      //   chart.update(0);
-      // }, 100);
-    </script>
   </body>
 </html>

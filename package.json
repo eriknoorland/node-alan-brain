@@ -4,6 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "remote": "node app.js state=0",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,8 +20,9 @@
   "homepage": "https://github.com/eriknoorland/node-allroundBot#readme",
   "dependencies": {
     "express": "^4.16.4",
-    "limiter": "^1.1.3",
-    "node-rplidar": "github:eriknoorland/node-rplidar#master",
+    "node-imu": "git+https://git@github.com/eriknoorland/node-imu.git",
+    "node-pixy2": "git+https://git@github.com/eriknoorland/node-pixy2.git",
+    "node-rplidar": "git+https://git@github.com/eriknoorland/node-rplidar.git",
     "pigpio": "^1.2.1",
     "socket.io": "^2.2.0"
   }

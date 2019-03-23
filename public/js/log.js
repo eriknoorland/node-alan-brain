@@ -1,5 +1,4 @@
-((document, io) => {
-  const socket = io();
+((document, socket) => {
   const logElement = document.getElementById('log');
 
   /**
@@ -35,4 +34,4 @@
   }
 
   init();
-})(document, window.io);
+})(document, window.socket);

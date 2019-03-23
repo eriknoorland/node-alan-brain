@@ -1,16 +1,12 @@
-const Modes = require('../Modes');
-
 /**
  * Remote
  * @param {Object} options
  * @return {Object}
  */
 module.exports = (EventEmitter, log, debounce) => {
-  return (options) => {
-    const { controllers, sensors } = options;
+  return ({ controllers, sensors, socket }) => {
     const { motors/*, buzzer*/ } = controllers;
     const { encoders, lidar } = sensors;
-    const mode = Modes.MANUAL;
 
     /**
      * Constructor
@@ -24,25 +20,12 @@ module.exports = (EventEmitter, log, debounce) => {
      */
     function start() {
       log('start', 'remote');
-    }
 
-    /**
-     * Set Socket
-     * @param {Socket} socket
-     */
-    function setSocket(socket) {
-      log('setSocket', 'remote');
-      
-      if (!socket) {
-        return;
-      }
-
-      socket.on('forward', debounce(forward, 50));
-      socket.on('reverse', debounce(reverse, 50));
-      socket.on('stop', debounce(stop, 50));
-      socket.on('rotateLeft', debounce(rotateLeft, 50));
-      socket.on('rotateRight', debounce(rotateRight, 50));
-      // socket.on('beep', buzzer.beep);
+      socket.on('remote.forward', debounce(forward, 50));
+      socket.on('remote.reverse', debounce(reverse, 50));
+      socket.on('remote.stop', debounce(stop, 50));
+      socket.on('remote.rotateLeft', debounce(rotateLeft, 50));
+      socket.on('remote.rotateRight', debounce(rotateRight, 50));
     }
 
     function forward() {
@@ -77,8 +60,6 @@ module.exports = (EventEmitter, log, debounce) => {
     constructor();
 
     return {
-      mode,
-      setSocket,
       start,
     };
   };

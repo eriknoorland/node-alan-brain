@@ -1,5 +1,4 @@
-((document, io) => {
-  const socket = io();
+((document, socket) => {
   const canvas = document.getElementById('lidar');
   const context = canvas.getContext('2d');
   const centerX = canvas.width * 0.5;
@@ -89,4 +88,4 @@
   }
 
   init();
-})(document, window.io);
+})(document, window.socket);

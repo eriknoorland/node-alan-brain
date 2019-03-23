@@ -55,8 +55,35 @@ table {
 
 body {
   font-family: Helvetica, sans-serif;
-  font-size: 14px;
+  font-size: 12px;
   background: #ccc;
+}
+
+.header {
+  display: flex;
+  padding: 10px 20px;
+  height: 50px;
+  background: #fff;
+  align-items: center;
+}
+
+.header__module {
+  padding: 0 20px;
+  border-right: 1px solid #ccc;
+}
+
+.header__module:first-child {
+  padding-left: 0;
+}
+
+.header__module:last-child {
+  border: 0;
+}
+
+.logo {
+  font-size: 15px;
+  font-weight: bold;
+  color: #303030;
 }
 
 .modules {
@@ -65,7 +92,7 @@ body {
 }
 
 .module {
-  margin: 20px 0 0 20px;
+  margin: 10px 0 0 10px;
   width: 400px !important;
   height: 400px !important;
   background: #fff;

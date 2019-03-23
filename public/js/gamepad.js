@@ -17,8 +17,7 @@
 // 15: D-pad right
 // 16: PS
 
-((document, io) => {
-  const socket = io();
+((document, socket) => {
   const haveEvents = 'ongamepadconnected' in window;
   const controllers = {};
 
@@ -166,25 +165,25 @@
   function triggerAction(index) {
     switch (index) {
       case 0: // cross
-        socket.emit('stop');
+        socket.emit('remote.stop');
         break;
       case 1: // circle
         // socket.emit('');
         break;
       case 2: // square
-        socket.emit('beep');
+        socket.emit('remote.beep');
         break;
       case 12: // D-pad up
-        socket.emit('forward');
+        socket.emit('remote.forward');
         break;
       case 13: // D-pad down
-        socket.emit('reverse');
+        socket.emit('remote.reverse');
         break;
       case 14: // D-pad left
-        socket.emit('rotateLeft');
+        socket.emit('remote.rotateLeft');
         break;
       case 15: // D-pad right
-        socket.emit('rotateRight');
+        socket.emit('remote.rotateRight');
         break;
     }
   }
@@ -195,4 +194,4 @@
   if (!haveEvents) {
     setInterval(scangamepads, 500);
   }
-})(document, window.io);
+})(document, window.socket);
