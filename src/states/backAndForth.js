@@ -25,6 +25,8 @@ module.exports = (EventEmitter, log) => {
      * Start
      */
     function start() {
+      log('start', 'backAndForth');
+
       const frontWallAngle = 0;
       const frontWallDistance = 300;
       const pauseTimeout = 500;
@@ -47,6 +49,13 @@ module.exports = (EventEmitter, log) => {
     }
 
     /**
+     * Stop
+     */
+    function stop() {
+      log('stop', 'backAndForth');
+    }
+
+    /**
      * Mission complete
      */
     function missionComplete() {
@@ -57,6 +66,7 @@ module.exports = (EventEmitter, log) => {
 
     return {
       start,
+      stop,
     };
   };
 };

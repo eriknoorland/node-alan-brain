@@ -21,11 +21,24 @@ module.exports = (EventEmitter, log, debounce) => {
     function start() {
       log('start', 'remote');
 
-      socket.on('remote.forward', debounce(forward, 50));
-      socket.on('remote.reverse', debounce(reverse, 50));
-      socket.on('remote.stop', debounce(stop, 50));
-      socket.on('remote.rotateLeft', debounce(rotateLeft, 50));
-      socket.on('remote.rotateRight', debounce(rotateRight, 50));
+      socket.on('remote.forward', forward);
+      socket.on('remote.reverse', reverse);
+      socket.on('remote.stop', stopMotors);
+      socket.on('remote.rotateLeft', rotateLeft);
+      socket.on('remote.rotateRight', rotateRight);
+    }
+
+    /**
+     * Start
+     */
+    function stop() {
+      log('stop', 'remote');
+
+      socket.removeListener('remote.forward', forward);
+      socket.removeListener('remote.reverse', reverse);
+      socket.removeListener('remote.stop', stopMotors);
+      socket.removeListener('remote.rotateLeft', rotateLeft);
+      socket.removeListener('remote.rotateRight', rotateRight);
     }
 
     function forward() {
@@ -38,8 +51,8 @@ module.exports = (EventEmitter, log, debounce) => {
       motors.reverse();
     }
 
-    function stop() {
-      log('stop', 'remote');
+    function stopMotors() {
+      log('stop motors', 'remote');
       motors.stop();
     }
 
@@ -61,6 +74,7 @@ module.exports = (EventEmitter, log, debounce) => {
 
     return {
       start,
+      stop,
     };
   };
 };

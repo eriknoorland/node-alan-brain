@@ -1,4 +1,5 @@
 const EventEmitter = require('events');
+const serialport = require('serialport');
 const Gpio = require('pigpio').Gpio;
 const express = require('express');
 const app = express();
@@ -22,84 +23,46 @@ const wheelEncoder = require('./src/sensors/wheelEncoder')(EventEmitter, Gpio);
 
 const States = require('./src/States')(EventEmitter, log, debounce);
 
-const lidar = rplidar('/dev/ttyUSB1');
-const camera = pixy2('/dev/ttyUSB0');
-const imu = bno055('/dev/ttyUSB2');
 // const buzzer = buzzerController({ triggerPin: 'pin#' });
 const wheelEncoderLeft = wheelEncoder({ pinA: 19, pinB: 26 });
 const wheelEncoderRight = wheelEncoder({ pinA: 23, pinB: 24 });
 const motorLeft = motor({ enablePin: 20, in1Pin: 21, in2Pin: 13 });
 const motorRight = motor({ enablePin: 17, in1Pin: 27, in2Pin: 22 });
-const motors = motorController({
-  motors: [motorLeft, motorRight],
-  encoders: [wheelEncoderLeft, wheelEncoderRight],
-});
 
-const telemetry = telemetryController({
-  sensors: {
-    encoders: [wheelEncoderLeft, wheelEncoderRight],
-    lidar,
-    imu,
-  },
-});
+const encoders = [wheelEncoderLeft, wheelEncoderRight];
+const motors = motorController({ motors: [motorLeft, motorRight], encoders });
+
+const telemetryOptions = {
+  sensors: { encoders },
+};
 
 const defaultStateOptions = {
   controllers: { motors/*, buzzer*/ },
-  sensors: {
-    encoders: [wheelEncoderLeft, wheelEncoderRight],
-    lidar,
-    camera,
-    imu,
-  },
+  sensors: { encoders },
 };
 
 let state;
 
+app.use(express.static('public'));
+
 /**
  * Init
  */
-const init = () => {
+function init() {
   log('init');
   log('server started', 'telemetry', 'green');
 
-  lidar.init()
-    .then(lidar.health)
-    .then(onLidarHealth)
-    .then(lidar.scan)
-    .catch(onLidarError);
-  
-  camera.init()
-    .then(() => log('pixy2 initialized!'));
-
-  imu.init()
-    .then(() => log('BNO055 initialized!'));
-};
-
-/**
- * Start countdown
- */
-const startCountdown = () => {
-  log('start countdown');
-
-  countdown(config.startTimeout)
-    .then(start);
-};
-
-/**
- * Countdown complete handler 
- */
-const start = () => {
-  log('start');
-  
-  state.start();
-  // TODO show running status with active LED
+  getUSBDevicePorts()
+    .then(initUSBDevices)
+    .then(initTelemetry)
+    .then(updateStateOptions);
 };
 
 /**
  * Socket connection event handler
  * @param {socket} socket
  */
-const onSocketConnection = (socket) => {
+function onSocketConnection(socket) {
   log('client connected', 'telemetry', 'green');
 
   socket.on('start', onStart.bind(null, socket));
@@ -115,7 +78,7 @@ const onSocketConnection = (socket) => {
  * @param {socket} socket
  * @param {int} stateIndex
  */
-const onStart = (socket, stateIndex) => {
+function onStart(socket, stateIndex) {
   if (stateIndex === null) {
     log('State argument required', 'error', 'red');
     return;
@@ -126,35 +89,140 @@ const onStart = (socket, stateIndex) => {
   const stateOptions = Object.assign({ socket }, defaultStateOptions);
   state = States[stateIndex](stateOptions);
 
-  startCountdown();
+  log('start countdown');
+
+  countdown(config.startTimeout)
+    .then(start);
+};
+
+/**
+ * Countdown complete handler 
+ */
+function start() {
+  log('start');
+  
+  state.start();
 };
 
 /**
  * Stop event handler
  */
-const onStop = () => {
+function onStop() {
   log('stop');
 
+  if (state) {
+    state.stop();
+    state = null;
+  }
+
   motors.stop();
-  process.exit(1);
+};
+
+/**
+ * 
+ * @param {Object} usbPorts
+ * @return {Promise}
+ */
+function initUSBDevices(usbPorts) {
+  log('init usb devices');
+
+  return new Promise((resolve) => {
+    const lidar = rplidar(usbPorts.lidar);
+    const camera = pixy2(usbPorts.camera);
+    const imu = bno055(usbPorts.imu);
+
+    lidar.init()
+      .then(lidar.health)
+      .then(onLidarHealth)
+      .then(lidar.scan)
+      .catch(onLidarError);
+    
+    camera.init()
+      .then(() => log('pixy2 initialized!', 'app', 'cyan'));
+
+    imu.init()
+      .then(() => log('BNO055 initialized!', 'app', 'cyan'));
+
+    resolve({ lidar, camera, imu });
+  });
+};
+
+/**
+ * 
+ * @param {Object} usbDevices
+ * @return {Promise}
+ */
+function initTelemetry(usbDevices) {
+  const { lidar, imu } = usbDevices;
+
+  log('init sending telemetry data');
+
+  return new Promise((resolve) => {
+    telemetryOptions.sensors.lidar = lidar;
+    telemetryOptions.sensors.imu = imu;
+
+    telemetryController(telemetryOptions);
+    resolve(usbDevices);
+  });
+};
+
+/**
+ * 
+ * @param {Object} usbDevices
+ * @return {Promise}
+ */
+function updateStateOptions(usbDevices) {
+  const { lidar, camera, imu } = usbDevices;
+  
+  log('update state options');
+
+  return new Promise((resolve) => {
+    defaultStateOptions.sensors.lidar = lidar;
+    defaultStateOptions.sensors.camera = camera;
+    defaultStateOptions.sensors.imu = imu;
+  });
+};
+
+/**
+ * Returns an object with a USB port name for each connected device
+ * @return {Promise}
+ */
+function getUSBDevicePorts() {
+  return new Promise((resolve) => {
+    const usbPorts = {};
+
+    serialport.list((error, ports) => {
+      ports.forEach((port) => {
+        switch(port.pnpId) {
+          case 'usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0':
+            usbPorts.lidar = port.comName;
+            break;
+          case 'usb-1a86_USB2.0-Serial-if00-port0':
+            usbPorts.imu = port.comName;
+            break;
+          case 'usb-FTDI_FT232R_USB_UART_A9ITLJ7V-if00-port0':
+            usbPorts.camera = port.comName;
+            break;
+        }
+      });
+    }).then(resolve.bind(null, usbPorts));
+  });
 };
 
 /**
  * Lidar health handler
  * @param {Object} health
  */
-const onLidarHealth = (health) => {
-  log(`lidar health: ${health.status}`);
-
+function onLidarHealth(health) {
   return new Promise((resolve, reject) => {
     // 0 = good, 1 = warning, 2 = error
     if (health.status !== 0) {
+      log(`lidar health: ${health.status}`, 'app', 'red');
       reject();
       return;
     }
 
-    log('ready to roll!');
-      // TODO show ready status with LED
+    log('lidar initialized!', 'app', 'cyan');
     resolve();
   });
 };
@@ -162,7 +230,7 @@ const onLidarHealth = (health) => {
 /**
  * Lidar health error handler
  */
-const onLidarError = () => {
+function onLidarError() {
   log('Lidar error', 'error', 'red');
   process.exit(1);
 };
@@ -174,7 +242,6 @@ process.on('beforeExit', () => {
   motors.stop();
 });
 
-app.use(express.static('public'));
 io.on('connection', onSocketConnection);
 
 // Roll out!

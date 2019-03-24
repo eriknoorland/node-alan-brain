@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/eriknoorland/node-allroundBot#readme",
   "dependencies": {
+    "@serialport/list": "^1.1.4",
     "express": "^4.16.4",
     "node-imu": "git+https://git@github.com/eriknoorland/node-imu.git",
     "node-pixy2": "git+https://git@github.com/eriknoorland/node-pixy2.git",

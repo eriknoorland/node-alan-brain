@@ -4,7 +4,7 @@ const colors = {
   red: { cmd: '\x1b[31m%s\x1b[0m', html: '#f00' },
   yellow: { cmd: '\x1b[33m%s\x1b[0m', html: '#ff0' },
   blue: { cmd: '\x1b[34m%s\x1b[0m', html: '#00f' },
-  magenta: { cmd: '\x1b[35m%s\x1b[0m', html: '#fof' },
+  magenta: { cmd: '\x1b[35m%s\x1b[0m', html: '#f0f' },
   cyan: { cmd: '\x1b[36m%s\x1b[0m', html: '#0ff' },
   white: { cmd: '\x1b[37m%s\x1b[0m', html: '#fff' },
 };

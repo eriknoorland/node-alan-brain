@@ -23,7 +23,7 @@
    * On data even thandler
    */
   function onData({ imu }) {
-    const { heading } = JSON.parse(imu);
+    const { heading } = imu;
 
     element.innerText = `${heading}°`;
 
