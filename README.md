@@ -1,18 +1,4 @@
 ## start application
 ```
-node app.js state=<state>
+npm start
 ```
-
-## states
-| # | State                   |
-| - |-------------------------|
-| 0 | remote                  |
-| 1 | backAndForth            |
-| 2 | backAndForthSlalom      |
-| 3 | backAndForthSuperSlalom |
-| 4 | lineFollower            |
-| 5 | lineFollowerObstacle    |
-| 6 | tTime                   |
-| 7 | tTimeBonus              |
-| 8 | cans                    |
-| 9 | cansPickupAndReturn     |
