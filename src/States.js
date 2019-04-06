@@ -1,14 +1,14 @@
-module.exports = (EventEmitter, log, debounce) => {
+module.exports = (config, log, debounce) => {
   return [
-    require('./states/remote')(EventEmitter, log, debounce),
-    require('./states/backAndForth')(EventEmitter, log),
-    // require('./states/backAndForthSlalom')(EventEmitter),
-    // require('./states/backAndForthSuperSlalom')(EventEmitter),
-    // require('./states/lineFollower')(EventEmitter),
-    // require('./states/lineFollowerObstacle')(EventEmitter),
-    // require('./states/tTime')(EventEmitter),
-    // require('./states/tTimeBonus')(EventEmitter),
-    // require('./states/cans')(EventEmitter),
-    // require('./states/cansPickupAndReturn')(EventEmitter),
+    require('./states/remote')(config, log, debounce),
+    require('./states/backAndForth')(config, log),
+    require('./states/backAndForthSlalom')(config, log),
+    require('./states/backAndForthSuperSlalom')(config, log),
+    require('./states/lineFollower')(config, log),
+    require('./states/lineFollowerObstacle')(config, log),
+    require('./states/tTime')(config, log),
+    require('./states/tTimeBonus')(config, log),
+    require('./states/cans')(config, log),
+    require('./states/cansPickupAndReturn')(config, log),
   ];
 };

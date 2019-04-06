@@ -1,4 +1,3 @@
-const startTimeout = 1000;
 const loopTime = 20; // miliseconds
 const wheelBase = 206; // mm
 const wheelDiameter = 90; // mm
@@ -10,7 +9,7 @@ const straightLineSpeed = 100; // mm/s
 const rotationSpeed = 25; // mm/s
 
 /**
- * Returns the number of ticks per looptime based on the disired speed in mm/s
+ * Returns the number of ticks per looptime based on the desired speed in mm/s
  * @param {Number} speed
  * @return {Number}
  */
@@ -22,8 +21,10 @@ const calcuateTicksPerLoopTime = (speed) => {
 };
 
 module.exports = {
-  startTimeout,
-  loopTime,
+  timeout: {
+    start: 3000,
+    pause: 250,
+  },
   encoders: {
     numFullRotationTicks: numRevolutionsFullTurn * numTicksPerRevolution,
   },
@@ -31,4 +32,8 @@ module.exports = {
     straight: calcuateTicksPerLoopTime(straightLineSpeed),
     rotate: calcuateTicksPerLoopTime(rotationSpeed),
   },
+  distance: {
+    wall: 300,
+  },
+  loopTime,
 };

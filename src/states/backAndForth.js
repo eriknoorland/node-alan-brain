@@ -8,7 +8,7 @@ const pause = require('../utils/pause');
  * @param {Object} options
  * @return {Object}
  */
-module.exports = (EventEmitter, log) => {
+module.exports = (config, log) => {
   return (options) => {
     const { controllers, sensors } = options;
     const { motors/*, buzzer*/ } = controllers;
@@ -26,23 +26,18 @@ module.exports = (EventEmitter, log) => {
      */
     function start() {
       log('start', 'backAndForth');
-
-      const frontWallAngle = 0;
-      const frontWallDistance = 300;
-      const pauseTimeout = 500;
       
-      const driveStraightCondition = isWithinDistance.bind(null, lidar, frontWallDistance, frontWallAngle);
+      const driveStraightCondition = isWithinDistance.bind(null, lidar, config.distance.wall, 0);
       const driveStraight = driveStraightUntil.bind(null, motors, driveStraightCondition);
       
-      // solveStartVector(lidar, motors)
-      //   .then(pause.bind(null, pauseTimeout))
-      //   .then(driveStraight)
-      driveStraight()
+      solveStartVector(lidar, motors)
+        .then(pause.bind(null, config.timeout.pause))
+        .then(driveStraight)
         .then(motors.stop)
-        .then(pause.bind(null, pauseTimeout))
+        .then(pause.bind(null, config.timeout.pause))
         .then(motors.rotate.bind(null, 180, 'left'))
         .then(motors.stop)
-        .then(pause.bind(null, pauseTimeout))
+        .then(pause.bind(null, config.timeout.pause))
         .then(driveStraight)
         .then(motors.stop)
         .then(missionComplete);

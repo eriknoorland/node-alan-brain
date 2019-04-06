@@ -48,6 +48,9 @@ const rotate = (motors, angle, direction, measurements = {}) => {
  */
 const solveStartVector = (lidar, motors) => {
   return new Promise((resolve) => {
+    resolve();
+    return;
+    
     scan(lidar, scanDuration, 0, {})
       .then(rotate.bind(null, motors, scanRotationOffset, 'right'))
       .then(scan.bind(null, lidar, scanDuration, scanRotationOffset))

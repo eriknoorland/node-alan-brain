@@ -11,6 +11,7 @@ const log = require('./src/utils/log')(io);
 const debounce = require('./src/utils/debounce');
 const parseArgvs = require('./src/utils/parseArgvs');
 const countdown = require('./src/utils/countdown')(log);
+const States = require('./src/States')(config, log, debounce);
 
 const telemetryController = require('./src/controllers/telemetry')(io, config);
 const motor = require('./src/controllers/motor')(Gpio);
@@ -21,14 +22,11 @@ const pixy2 = require('node-pixy2');
 const bno055 = require('node-imu');
 const wheelEncoder = require('./src/sensors/wheelEncoder')(EventEmitter, Gpio);
 
-const States = require('./src/States')(EventEmitter, log, debounce);
-
 // const buzzer = buzzerController({ triggerPin: 'pin#' });
 const wheelEncoderLeft = wheelEncoder({ pinA: 19, pinB: 26 });
 const wheelEncoderRight = wheelEncoder({ pinA: 23, pinB: 24 });
 const motorLeft = motor({ enablePin: 20, in1Pin: 21, in2Pin: 13 });
 const motorRight = motor({ enablePin: 17, in1Pin: 27, in2Pin: 22 });
-
 const encoders = [wheelEncoderLeft, wheelEncoderRight];
 const motors = motorController({ motors: [motorLeft, motorRight], encoders });
 
@@ -65,12 +63,9 @@ function init() {
 function onSocketConnection(socket) {
   log('client connected', 'telemetry', 'green');
 
+  socket.on('disconnect', onSocketDisconnect);
   socket.on('start', onStart.bind(null, socket));
   socket.on('stop', onStop);
-
-  socket.on('disconnect', () => {
-    log('client disconnected', 'telemetry', 'yellow');
-  });
 };
 
 /**
@@ -91,7 +86,7 @@ function onStart(socket, stateIndex) {
 
   log('start countdown');
 
-  countdown(config.startTimeout)
+  countdown(config.timeout.start)
     .then(start);
 };
 
@@ -215,8 +210,7 @@ function getUSBDevicePorts() {
  */
 function onLidarHealth(health) {
   return new Promise((resolve, reject) => {
-    // 0 = good, 1 = warning, 2 = error
-    if (health.status !== 0) {
+    if (health.status !== 0) { // 0 = good, 1 = warning, 2 = error
       log(`lidar health: ${health.status}`, 'app', 'red');
       reject();
       return;
@@ -234,6 +228,13 @@ function onLidarError() {
   log('Lidar error', 'error', 'red');
   process.exit(1);
 };
+
+/**
+ * Socket disconnect event handler
+ */
+function onSocketDisconnect() {
+  log('client disconnected', 'telemetry', 'yellow');
+}
 
 /**
  * Before exit event handler

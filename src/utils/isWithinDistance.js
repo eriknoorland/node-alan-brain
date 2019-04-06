@@ -1,6 +1,8 @@
 /**
  * Resolves the straight driving promise when within the set wall distance
- * @param {int} allowedDistance
+ * @param {Object} lidar
+ * @param {Number} allowedDistance
+ * @param {Number} checkAngle
  * @param {Function} resolve
  */
 const isWithinDistance = (lidar, allowedDistance, checkAngle, resolve) => {

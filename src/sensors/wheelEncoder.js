@@ -34,6 +34,7 @@ module.exports = (EventEmitter, Gpio) => {
 
     return {
       on: eventEmitter.on.bind(eventEmitter),
+      removeListener: eventEmitter.removeListener.bind(eventEmitter),
     };
   };
 };

@@ -3,7 +3,7 @@
  * @param {Object} options
  * @return {Object}
  */
-module.exports = (EventEmitter, log, debounce) => {
+module.exports = (config, log, debounce) => {
   return ({ controllers, sensors, socket }) => {
     const { motors/*, buzzer*/ } = controllers;
     const { encoders, lidar } = sensors;

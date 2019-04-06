@@ -1,38 +1,38 @@
 /**
  * lineFollowerObstacle
+ * @param {Object} options
  * @return {Object}
  */
-const lineFollowerObstacle = (log, options) => {
+module.exports = (config, log) => {
+  return (options) => {
+    /**
+     * Constructor
+     */
+    function constructor() {
+      log('constructor', 'lineFollowerObstacle');
 
-  /**
-   * Constructor
-   */
-  function constructor() {
-    log('constructor', 'lineFollowerObstacle');
+      // set pixy in right mode (s1)
+    }
 
-    // set pixy in right mode (s1)
-  }
+    /**
+     * Start
+     */
+    function start() {
 
-  /**
-   * Start
-   */
-  function start() {
+    }
 
-  }
+    /**
+     * Stop
+     */
+    function stop() {
 
-  /**
-   * Loop
-   */
-  function loop() {
+    }
 
-  }
+    constructor();
 
-  constructor();
-
-  return {
-    start,
-    loop,
+    return {
+      start,
+      stop,
+    };
   };
 };
-
-module.exports = lineFollowerObstacle;
