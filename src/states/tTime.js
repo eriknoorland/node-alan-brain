@@ -118,6 +118,11 @@ module.exports = (config, log) => {
      */
     function missionComplete() {
       log('mission complete', 'tTime');
+
+      leftEncoderCount = 0;
+      rightEncoderCount = 0;
+      leftEncoderCountTemp = 0;
+      rightEncoderCountTemp = 0;
     }
 
     constructor();

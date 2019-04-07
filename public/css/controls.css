@@ -15,6 +15,7 @@
   margin: 0 5px 0 0;
   padding: 5px 10px;
   outline: 0;
+  cursor: pointer;
   -webkit-appearance: none;
 }
 
@@ -29,6 +30,12 @@
 }
 
 .controls__button--stop {
+  border-color: #ffeeba;
+  background: #fff3cd;
+  color: #856404;
+}
+
+.controls__button--shutdown {
   border-color: #f8d7da;
   background: #f5c6cb;
   color: #721c24;

@@ -24,6 +24,7 @@
     "node-pixy2": "git+https://git@github.com/eriknoorland/node-pixy2.git",
     "node-rplidar": "git+https://git@github.com/eriknoorland/node-rplidar.git",
     "pigpio": "^1.2.1",
+    "shelljs": "^0.8.3",
     "socket.io": "^2.2.0"
   }
 }

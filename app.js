@@ -1,6 +1,7 @@
 const EventEmitter = require('events');
 const serialport = require('serialport');
 const Gpio = require('pigpio').Gpio;
+const shell = require('shelljs');
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
@@ -66,6 +67,7 @@ function onSocketConnection(socket) {
   socket.on('disconnect', onSocketDisconnect);
   socket.on('start', onStart.bind(null, socket));
   socket.on('stop', onStop);
+  socket.on('shutdown', onShutdown);
 };
 
 /**
@@ -103,15 +105,31 @@ function start() {
  * Stop event handler
  */
 function onStop() {
-  log('stop');
+  return new Promise((resolve) => {
+    log('stop');
 
-  if (state) {
-    state.stop();
-    state = null;
-  }
+    if (state) {
+      state.stop();
+      state = null;
+    }
 
-  motors.stop();
+    motors.stop();
+
+    resolve();
+  });
 };
+
+/**
+ * Shutdown event handler
+ */
+function onShutdown() {
+  log('shutdown', 'app', 'red');
+  
+  onStop()
+    .then(() => {
+      shell.exec('sudo shutdown -h now');
+    });
+}
 
 /**
  * 
