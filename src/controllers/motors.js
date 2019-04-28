@@ -35,6 +35,16 @@ module.exports = (config) => {
     }
 
     /**
+     * Drive
+     * @param {Object} left
+     * @param {Object} right
+     */
+    function drive(left, right) {
+      motors[0][left.direction](left.speed);
+      motors[1][right.direction](right.speed);
+    }
+
+    /**
      * Stop
      * @returns {Promise}
      */
@@ -171,6 +181,7 @@ module.exports = (config) => {
     return {
       forward,
       reverse,
+      drive,
       rotate,
       stop,
     };

@@ -4,13 +4,12 @@
  * @return {Object}
  */
 module.exports = (config, log) => {
-  return (options) => {
-    const { controllers, sensors } = options;
+  return ({ controllers, sensors }) => {
     const { motors } = controllers;
     const { camera } = sensors;
 
-    let interval;
-    let vector;
+    let isRunning = false;
+    let centerX;
 
     /**
      * Constructor
@@ -23,29 +22,54 @@ module.exports = (config, log) => {
      * Start
      */
     function start() {
-      camera.on('data', (data) => {
-        vector = data;
-      });
-
+      camera.on('data', onCameraData);
       camera.setState('line');
 
-      interval = setInterval(loop, config.loopTime);
+      setTimeout(() => {
+        isRunning = true;
+      }, 500);
     }
 
     /**
      * Stop
      */
     function stop() {
-      clearInterval(interval);
+      isRunning = false;
+      motors.stop();
       camera.setState('idle');
     }
 
     /**
-     * Loop
+     * Camera data event handler
+     * @param {Object} data - { index: 153, flags: 0, x0: 44, y0: 51, x1: 49, y1: 0 }
      */
-    function loop() {
-      // { index: 153, flags: 0, x0: 44, y0: 51, x1: 49, y1: 0 }
-      // console.log(vector);
+    function onCameraData(data) {
+      if (data.code === 200) {
+        centerX = data.frameWidth * 0.5;
+        return;
+      }
+
+      const { x1 } = data;
+      const error = x1 - centerX; // calculate error based on x center and x1
+      const direction = 'forward';
+      const baseSpeed = 200;
+      const leftSpeed = baseSpeed + (error * 5);
+      const rightSpeed = baseSpeed - (error * 5);
+
+      // console.log(error);
+      // p(id) calculation
+      // set left / right motor speed based on pid
+      // if error is bottom up
+      // - if intersection - slow down for intersection
+      // else reverse?
+      // set motor left / right speed
+      
+      if (isRunning) {
+        motors.drive(
+          { direction, speed: leftSpeed},
+          { direction, speed: rightSpeed},
+        );
+      }
     }
 
     constructor();
