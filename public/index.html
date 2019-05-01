@@ -43,6 +43,14 @@
         </button>
       </div>
 
+      <div id="battery" class="header__module battery">
+        <div class="batteryStatus">
+          <div class="batteryStatus__indicator" data-js-battery-indicator></div>
+        </div>
+
+        <span data-js-battery-percentage>-%</span>
+      </div>
+
       <div id="fps" class="header__module fps"></div>
     </header>
 
@@ -64,6 +72,7 @@
     </script>
 
     <script src="js/controls.js"></script>
+    <!-- <script src="js/battery.js"></script> -->
     <script src="js/fps.js"></script>
     <script src="js/imu.js"></script>
     <script src="js/lidar.js"></script>
