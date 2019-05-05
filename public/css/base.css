@@ -61,22 +61,51 @@ body {
 
 .header {
   display: flex;
-  padding: 10px 20px;
-  height: 50px;
+  padding: 10px;
+  height: auto;
   background: #fff;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+@media(min-width: 768px) {
+  .header {
+    padding: 10px 20px;
+    height: 50px;
+  }
 }
 
 .header__module {
   display: flex;
+  margin: 0 0 10px 0;
   padding: 0 20px;
   height: 100%;
   border-right: 1px solid #ccc;
   align-items: center;
 }
 
-.header__module:first-child {
+.header__module:last-child {
+  margin: 0;
+}
+
+.header__module--logo {
   padding-left: 0;
+}
+
+.header__module--controls {
+}
+
+@media(max-width: 767px) {
+  .header__module--controls {
+    padding: 0;
+    border: 0;
+  }
+}
+
+.header__module--battery {
+}
+
+.header__module--fps {
 }
 
 .header__module:last-child {
@@ -90,15 +119,33 @@ body {
 }
 
 .modules {
-  display: flex;
-  flex-wrap: wrap;
+  padding: 0 10px;
+}
+
+@media(min-width: 768px) {
+  .modules {
+    display: flex;
+    padding: 0;
+    flex-wrap: wrap;
+  }
 }
 
 .module {
-  margin: 10px 0 0 10px;
-  width: 400px !important;
-  height: 400px !important;
+  position: relative;
+  margin: 10px 0 0 0;
+  padding-top: 100%;
+  width: 100% !important;
+  height: 300px !important;
   background: #fff;
+}
+
+@media(min-width: 768px) {
+  .module {
+    margin: 10px 0 0 10px;
+    padding-top: 0;
+    width: 400px !important;
+    height: 400px !important;
+  }
 }
 
 .module--padding {
@@ -106,6 +153,10 @@ body {
 }
 
 /****************************/
+
+.battery {
+  display: flex;
+}
 
 .batteryStatus {
   margin: 0 4px 0 0;

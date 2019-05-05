@@ -1,14 +1,26 @@
 .controls {
-
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .controls__select {
-  margin: 0 5px 0 0;
+  margin: 0 5px 10px 0;
   padding: 5px 10px;
+  width: 100%;
   border-radius: 0;
   border-color: #ccc;
   outline: 0;
   -webkit-appearance: none;
+}
+
+@media(min-width: 768px) {
+  .controls__select {
+    width: auto;
+  }
+}
+
+.controls__buttons {
+
 }
 
 .controls__button {

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alan's Telemetry</title>
     <link rel="stylesheet" type="text/css" href="css/base.css">
     <link rel="stylesheet" type="text/css" href="css/lidar.css">
@@ -11,56 +12,70 @@
   </head>
   <body>
     <header class="header">
-      <div class="header__module logo">
-        Alan
-      </div>
-
-      <div class="header__module controls">
-        <select class="controls__select" data-js-controls-stateSelect>
-          <option disabled selected>Select state</option>
-          <option value="0">Remote</option>
-          <option value="1">Back and forth</option>
-          <option value="2">Back and forth slalom</option>
-          <option value="3">Back and forth super slalom</option>
-          <option value="4">Linefollower</option>
-          <option value="5">Linefollower obstacle</option>
-          <option value="6">T-time</option>
-          <option value="7">T-time bonus</option>
-          <option value="8">Cans</option>
-          <option value="9">Cans pickup and return</option>
-        </select>
-
-        <button class="controls__button controls__button--start" data-js-controls-startButton>
-          Start
-        </button>
-
-        <button class="controls__button controls__button--stop" data-js-controls-stopButton>
-          Stop
-        </button>
-
-        <button class="controls__button controls__button--shutdown" data-js-controls-shutdownButton>
-          Shutdown
-        </button>
-      </div>
-
-      <div id="battery" class="header__module battery">
-        <div class="batteryStatus">
-          <div class="batteryStatus__indicator" data-js-battery-indicator></div>
+      <div class="header__module header__module--logo">
+        <div class="logo">
+          Alan
         </div>
-
-        <span data-js-battery-percentage>-%</span>
       </div>
 
-      <div id="fps" class="header__module fps"></div>
+      <div class="header__module header__module--battery">
+        <div id="battery" class="battery">
+          <div class="batteryStatus">
+            <div class="batteryStatus__indicator" data-js-battery-indicator></div>
+          </div>
+
+          <span data-js-battery-percentage>-%</span>
+        </div>
+      </div>
+
+      <div class="header__module header__module--fps">
+        <div id="fps" class="fps"></div>
+      </div>
+
+      <div class="header__module header__module--controls">
+        <div class="controls">
+          <select class="controls__select" data-js-controls-stateSelect>
+            <option disabled selected>Select state</option>
+            <option value="0">Remote</option>
+            <option value="1">Back and forth</option>
+            <option value="2">Back and forth slalom</option>
+            <option value="3">Back and forth super slalom</option>
+            <option value="4">Linefollower</option>
+            <option value="5">Linefollower obstacle</option>
+            <option value="6">T-time</option>
+            <option value="7">T-time bonus</option>
+            <option value="8">Cans</option>
+            <option value="9">Cans pickup and return</option>
+          </select>
+
+          <div class="controls__buttons">
+            <button class="controls__button controls__button--start" data-js-controls-startButton>
+              Start
+            </button>
+
+            <button class="controls__button controls__button--stop" data-js-controls-stopButton>
+              Stop
+            </button>
+
+            <button class="controls__button controls__button--shutdown" data-js-controls-shutdownButton>
+              Shutdown
+            </button>
+          </div>
+        </div>
+      </div>
     </header>
 
     <div class="modules">
-      <pre id="log" class="module log"></pre>
+      <div class="module">
+        <pre id="log" class="log"></pre>
+      </div>
 
-      <canvas id="lidar" class="module lidar" width="400" height="400"></canvas>
+      <div class="module">
+        <canvas id="lidar" class="lidar"></canvas>
+      </div>
 
-      <div class="module imu">
-        <canvas id="imu" width="400" height="400"></canvas>
+      <div class="module">
+        <canvas id="imu" class="imu"></canvas>
         <div id="heading" class="heading"></div>
       </div>
     </div>

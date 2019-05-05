@@ -1,14 +1,21 @@
 ((document, socket) => {
   const canvas = document.getElementById('lidar');
   const context = canvas.getContext('2d');
-  const centerX = canvas.width * 0.5;
-  const centerY = canvas.height * 0.5;
   const distanceCircles = [20, 40, 60, 80, 100, 120, 140, 160, 180]; // cm radius
+  
+  let centerX = canvas.width * 0.5;
+  let centerY = canvas.height * 0.5;
 
   /**
    *
    */
   function init() {
+    canvas.setAttribute('width', canvas.clientWidth);
+    canvas.setAttribute('height', canvas.clientWidth);
+
+    centerX = canvas.width * 0.5;
+    centerY = canvas.height * 0.5;
+    
     bindEvents();
   }
 
