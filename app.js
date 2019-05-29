@@ -7,6 +7,7 @@ const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+const apiV1 = require('./src/api/v1');
 const config = require('./src/config');
 const log = require('./src/utils/log')(io);
 const debounce = require('./src/utils/debounce');
@@ -43,6 +44,7 @@ const defaultStateOptions = {
 let state;
 
 app.use(express.static('public'));
+app.use('/api/v1', apiV1);
 
 /**
  * Init
