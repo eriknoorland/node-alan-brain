@@ -1,16 +1,20 @@
+const fs = require('fs');
 const express = require('express');
 const router = express.Router();
 
-router.get('/config', (request, response) => {
-  // read config.json
-  // response.jsonp();
+router.get('/settings', (request, response) => {
+  fs.readFile(`${__dirname}/../../config.json`, (error, data) => {
+    response.setHeader('Content-Type', 'application/json');
+    response.end(JSON.stringify(data));
+  });
 });
 
-router.post('/config', (request, response) => {
+router.put('/settings', (request, response) => {
+  // JSON.stringify(request.body, null, 2);
   // get body from request
   // JSON.parse
   // write to config.json
-  // response.send();
+  // response.jsonp(JSON.stringify(request.body));
 });
 
 module.exports = router;

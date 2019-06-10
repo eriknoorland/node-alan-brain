@@ -5,6 +5,7 @@ const shell = require('shelljs');
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
+const bodyParser = require('body-parser');
 const io = require('socket.io')(http);
 
 const apiV1 = require('./src/api/v1');
@@ -44,6 +45,7 @@ const defaultStateOptions = {
 let state;
 
 app.use(express.static('public'));
+app.use(bodyParser.json());
 app.use('/api/v1', apiV1);
 
 /**
