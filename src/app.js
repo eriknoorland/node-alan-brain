@@ -130,8 +130,10 @@ function initMainController(portName) {
   const mainController = MainController(portName);
 
   mainController.init()
-    .then(mainController.setLedColor.bind(null, 0, 255, 0))
-    .then(() => log('main controller initialized!', 'app', 'cyan'));
+    .then(() => {
+      log('main controller initialized!', 'app', 'cyan');
+      mainController.setLedColor(0, 255, 0);
+    });
 
   return mainController;
 }
