@@ -1,30 +1,30 @@
 {
-  "name": "allroundbot",
+  "name": "node-alan-brain",
   "version": "0.0.1",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "nodemon index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eriknoorland/node-allroundBot.git"
+    "url": "git+https://github.com/eriknoorland/node-alan-brain.git"
   },
   "author": "Erik Noorland <mail@eriknoorland.nl> (eriknoorland.nl)",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/eriknoorland/node-allroundBot/issues"
+    "url": "https://github.com/eriknoorland/node-alan-brain/issues"
   },
-  "homepage": "https://github.com/eriknoorland/node-allroundBot#readme",
+  "homepage": "https://github.com/eriknoorland/node-alan-brain#readme",
   "dependencies": {
     "@serialport/list": "^1.1.4",
     "body-parser": "^1.19.0",
+    "dotenv": "^8.0.0",
     "express": "^4.16.4",
-    "node-imu": "git+https://git@github.com/eriknoorland/node-imu.git",
+    "node-alan-main-controller": "git+https://git@github.com/eriknoorland/node-alan-main-controller.git",
     "node-pixy2": "git+https://git@github.com/eriknoorland/node-pixy2.git",
     "node-rplidar": "git+https://git@github.com/eriknoorland/node-rplidar.git",
     "nodemon": "^1.19.1",
-    "pigpio": "^1.2.2",
     "serialport": "^7.1.5",
     "shelljs": "^0.8.3",
     "socket.io": "^2.2.0"

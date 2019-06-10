@@ -1,52 +1,38 @@
+require('dotenv').config();
+
 const EventEmitter = require('events');
 const serialport = require('serialport');
-const Gpio = require('pigpio').Gpio;
 const shell = require('shelljs');
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
 const bodyParser = require('body-parser');
 const io = require('socket.io')(http);
-
-const apiV1 = require('./src/api/v1');
-const config = require('./src/config');
-const log = require('./src/utils/log')(io);
-const debounce = require('./src/utils/debounce');
-const parseArgvs = require('./src/utils/parseArgvs');
-const countdown = require('./src/utils/countdown')(log);
-const States = require('./src/States')(config, log, debounce);
-
-const telemetryController = require('./src/controllers/telemetry')(io, config);
-const motor = require('./src/controllers/motor')(Gpio);
-const motorController = require('./src/controllers/motors')(config);
-// const buzzerController = require('./src/controllers/buzzer');
 const rplidar = require('node-rplidar');
 const pixy2 = require('node-pixy2');
-const bno055 = require('node-imu');
-const wheelEncoder = require('./src/sensors/wheelEncoder')(EventEmitter, Gpio);
+const MainController = require('node-alan-main-controller');
 
-// const buzzer = buzzerController({ triggerPin: 'pin#' });
-const wheelEncoderLeft = wheelEncoder({ pinA: 19, pinB: 26 });
-const wheelEncoderRight = wheelEncoder({ pinA: 23, pinB: 24 });
-const motorLeft = motor({ enablePin: 20, in1Pin: 21, in2Pin: 13 });
-const motorRight = motor({ enablePin: 17, in1Pin: 27, in2Pin: 22 });
-const encoders = [wheelEncoderLeft, wheelEncoderRight];
-const motors = motorController({ motors: [motorLeft, motorRight], encoders });
+const config = require('./config');
+const log = require('./utils/log')(io);
+const debounce = require('./utils/debounce');
+const countdown = require('./utils/countdown')(log);
+const States = require('./States')(config, log, debounce);
+const telemetryController = require('./controllers/telemetry')(io, config);
 
 const telemetryOptions = {
-  sensors: { encoders },
+  sensors: {},
 };
 
 const defaultStateOptions = {
-  controllers: { motors/*, buzzer*/ },
-  sensors: { encoders },
+  controllers: {},
+  sensors: {},
 };
 
 let state;
 
-app.use(express.static('public'));
+app.use(express.static(process.env.TELEMETRY_PUBLIC_FOLDER));
 app.use(bodyParser.json());
-app.use('/api/v1', apiV1);
+app.use('/api/v1', require('./api/v1'));
 
 /**
  * Init
@@ -144,23 +130,25 @@ function initUSBDevices(usbPorts) {
   log('init usb devices');
 
   return new Promise((resolve) => {
-    const lidar = rplidar(usbPorts.lidar);
-    const camera = pixy2(usbPorts.camera);
-    const imu = bno055(usbPorts.imu);
+    // const mainController = MainController(usbPorts.mainController);
+    // const lidar = rplidar(usbPorts.lidar);
+    // const camera = pixy2(usbPorts.camera);
+    // const imu = bno055(usbPorts.imu);
 
-    lidar.init()
-      .then(lidar.health)
-      .then(onLidarHealth)
-      .then(lidar.scan)
-      .catch(onLidarError);
+    // mainController.init()
+    //   .then(mainController.setLedColor.bind(null, 0, 255, 0))
+    //   .then(() => log('main controller initialized!', 'app', 'cyan'));
+
+    // lidar.init()
+    //   .then(lidar.health)
+    //   .then(onLidarHealth)
+    //   .then(lidar.scan)
+    //   .catch(onLidarError);
     
-    camera.init()
-      .then(() => log('pixy2 initialized!', 'app', 'cyan'));
+    // camera.init()
+    //   .then(() => log('pixy2 initialized!', 'app', 'cyan'));
 
-    imu.init()
-      .then(() => log('BNO055 initialized!', 'app', 'cyan'));
-
-    resolve({ lidar, camera, imu });
+    resolve({}); // resolve({ lidar, camera });
   });
 };
 
@@ -189,14 +177,14 @@ function initTelemetry(usbDevices) {
  * @return {Promise}
  */
 function updateStateOptions(usbDevices) {
-  const { lidar, camera, imu } = usbDevices;
+  const { lidar, camera, mainController } = usbDevices;
   
   log('update state options');
 
   return new Promise((resolve) => {
+    defaultStateOptions.controllers.main = mainController;
     defaultStateOptions.sensors.lidar = lidar;
     defaultStateOptions.sensors.camera = camera;
-    defaultStateOptions.sensors.imu = imu;
   });
 };
 
@@ -209,14 +197,22 @@ function getUSBDevicePorts() {
     const usbPorts = {};
 
     serialport.list((error, ports) => {
+      console.log(ports);
+      
       ports.forEach((port) => {
         switch(port.pnpId) {
           case 'usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0':
             usbPorts.lidar = port.comName;
             break;
-          case 'usb-1a86_USB2.0-Serial-if00-port0':
-            usbPorts.imu = port.comName;
-            break;
+
+          // case '':
+          //   usbPorts.mainController = port.comName;
+          //   break;
+
+          // case 'usb-1a86_USB2.0-Serial-if00-port0':
+          //   usbPorts.imu = port.comName;
+          //   break;
+            
           case 'usb-FTDI_FT232R_USB_UART_A9ITLJ7V-if00-port0':
             usbPorts.camera = port.comName;
             break;
@@ -248,7 +244,7 @@ function onLidarHealth(health) {
  */
 function onLidarError() {
   log('Lidar error', 'error', 'red');
-  process.exit(1);
+  // process.exit(1);
 };
 
 /**
@@ -262,7 +258,7 @@ function onSocketDisconnect() {
  * Before exit event handler
  */
 process.on('beforeExit', () => {
-  motors.stop();
+  // motors.stop();
 });
 
 io.on('connection', onSocketConnection);

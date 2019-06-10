@@ -22,8 +22,13 @@ module.exports = (socket, config) => {
       fpsInterval = setInterval(setFps, config.loopTime);
       emitInterval = setInterval(emit, 100);
 
-      lidar.on('data', onLidarData);
-      imu.on('data', onIMUData);
+      if (lidar) {
+        lidar.on('data', onLidarData);
+      }
+
+      if (imu) {
+        imu.on('data', onIMUData);
+      }
     }
 
     /**
