@@ -28,6 +28,7 @@ const defaultStateOptions = {
   sensors: {},
 };
 
+let mainController;
 let state;
 
 app.use(express.static(process.env.TELEMETRY_PUBLIC_FOLDER));
@@ -103,8 +104,6 @@ function onStop() {
       state = null;
     }
 
-    motors.stop();
-
     resolve();
   });
 };
@@ -114,6 +113,8 @@ function onStop() {
  */
 function onShutdown() {
   log('shutdown', 'app', 'red');
+  
+  mainController.setLedColor(0, 0, 0);
   
   onStop()
     .then(() => {
@@ -127,7 +128,7 @@ function onShutdown() {
  * @return {Object}
  */
 function initMainController(portName) {
-  const mainController = MainController(portName);
+  mainController = MainController(portName);
 
   mainController.init()
     .then(() => {
