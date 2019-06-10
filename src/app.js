@@ -123,6 +123,55 @@ function onShutdown() {
 
 /**
  * 
+ * @param {String} portName
+ * @return {Object}
+ */
+function initMainController(portName) {
+  const mainController = MainController(portName);
+
+  mainController.init()
+    .then(mainController.setLedColor.bind(null, 0, 255, 0))
+    .then(() => log('main controller initialized!', 'app', 'cyan'));
+
+  return mainController;
+}
+
+/**
+ * 
+ * @param {String} portName
+ * @return {Object}
+ */
+function initLidar(portName) {
+  const lidar = rplidar(portName);
+
+  lidar.init()
+    .then(lidar.health)
+    .then(onLidarHealth)
+    .then(lidar.scan)
+    .catch(() => {
+      log('Lidar error', 'error', 'red');
+      // process.exit(1);
+    });
+
+  return lidar;
+}
+
+/**
+ * 
+ * @param {String} portName
+ * @return {Object}
+ */
+function initCamera(portName) {
+  const camera = pixy2(portName);
+
+  camera.init()
+    .then(() => log('pixy2 initialized!', 'app', 'cyan'));
+
+  return camera;
+}
+
+/**
+ * 
  * @param {Object} usbPorts
  * @return {Promise}
  */
@@ -130,25 +179,21 @@ function initUSBDevices(usbPorts) {
   log('init usb devices');
 
   return new Promise((resolve) => {
-    // const mainController = MainController(usbPorts.mainController);
-    // const lidar = rplidar(usbPorts.lidar);
-    // const camera = pixy2(usbPorts.camera);
-    // const imu = bno055(usbPorts.imu);
+    const resolveObject = {};
 
-    // mainController.init()
-    //   .then(mainController.setLedColor.bind(null, 0, 255, 0))
-    //   .then(() => log('main controller initialized!', 'app', 'cyan'));
+    if (usbPorts.mainController) {
+      resolveObject.mainController = initMainController(usbPorts.mainController);
+    }
 
-    // lidar.init()
-    //   .then(lidar.health)
-    //   .then(onLidarHealth)
-    //   .then(lidar.scan)
-    //   .catch(onLidarError);
-    
-    // camera.init()
-    //   .then(() => log('pixy2 initialized!', 'app', 'cyan'));
+    if (usbPorts.lidar) {
+      resolveObject.lidar = initLidar(usbPorts.lidar);
+    }
 
-    resolve({}); // resolve({ lidar, camera });
+    if (usbPorts.camera) {
+      resolveObject.camera = initCamera(usbPorts.camera);
+    }
+
+    resolve(resolveObject);
   });
 };
 
@@ -197,24 +242,18 @@ function getUSBDevicePorts() {
     const usbPorts = {};
 
     serialport.list((error, ports) => {
-      console.log(ports);
-      
-      ports.forEach((port) => {
-        switch(port.pnpId) {
-          case 'usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0':
-            usbPorts.lidar = port.comName;
+      ports.forEach(({ comName, vendorId, productId }) => {
+        switch (true) {
+          case vendorId === '10c4' && productId === 'ea60':
+            usbPorts.lidar = comName;
             break;
 
-          // case '':
-          //   usbPorts.mainController = port.comName;
-          //   break;
-
-          // case 'usb-1a86_USB2.0-Serial-if00-port0':
-          //   usbPorts.imu = port.comName;
-          //   break;
+          case vendorId === '2341' && productId === '0042':
+            usbPorts.mainController = comName;
+            break;
             
-          case 'usb-FTDI_FT232R_USB_UART_A9ITLJ7V-if00-port0':
-            usbPorts.camera = port.comName;
+          case vendorId === '0403' && productId === '6001':
+            usbPorts.camera = comName;
             break;
         }
       });
@@ -237,14 +276,6 @@ function onLidarHealth(health) {
     log('lidar initialized!', 'app', 'cyan');
     resolve();
   });
-};
-
-/**
- * Lidar health error handler
- */
-function onLidarError() {
-  log('Lidar error', 'error', 'red');
-  // process.exit(1);
 };
 
 /**
