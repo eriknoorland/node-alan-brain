@@ -16,7 +16,7 @@ module.exports = {
       fast: 10, // cms/s
       slow: 5, // cms/s
     },
-    lineFollowing: 15, // cm/s
+    lineFollowing: 20, // cm/s
   },
   distance: {
     front: {

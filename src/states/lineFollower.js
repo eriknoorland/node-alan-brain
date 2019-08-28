@@ -68,8 +68,8 @@ module.exports = (config, log) => {
       const error0 = (x0 - centerX);
       const error1 = (x1 - centerX);
       const error = error0 + error1;
-      const leftSpeed = constrain(Math.round(speed.lineFollowing + (error * pid.lineFollowing.Kp)), 0, 20);
-      const rightSpeed = constrain(Math.round(speed.lineFollowing - (error * pid.lineFollowing.Kp)), 0, 20);
+      const leftSpeed = constrain(Math.round(speed.lineFollowing - (error * pid.lineFollowing.Kp)), 0, 20);
+      const rightSpeed = constrain(Math.round(speed.lineFollowing + (error * pid.lineFollowing.Kp)), 0, 20);
 
       if (isRunning) {
         main.drive(leftSpeed, rightSpeed);
