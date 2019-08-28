@@ -168,7 +168,9 @@ function initCamera(portName) {
   const camera = pixy2(portName);
 
   camera.init()
-    .then(() => log('pixy2 initialized!', 'app', 'cyan'));
+    .then(() => {
+      log('pixy2 initialized!', 'app', 'cyan');
+    });
 
   return camera;
 }
@@ -206,13 +208,14 @@ function initUSBDevices(usbPorts) {
  * @return {Promise}
  */
 function initTelemetry(usbDevices) {
-  const { lidar, imu } = usbDevices;
+  const { lidar, camera, mainController } = usbDevices;
 
   log('init sending telemetry data');
 
   return new Promise((resolve) => {
     telemetryOptions.sensors.lidar = lidar;
-    telemetryOptions.sensors.imu = imu;
+    telemetryOptions.sensors.camera = camera;
+    telemetryOptions.sensors.main = mainController;
 
     telemetryController(telemetryOptions);
     resolve(usbDevices);
@@ -292,7 +295,7 @@ function onSocketDisconnect() {
  * Before exit event handler
  */
 process.on('beforeExit', () => {
-  // motors.stop();
+  main.stop(1);
 });
 
 io.on('connection', onSocketConnection);

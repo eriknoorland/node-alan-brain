@@ -2,7 +2,7 @@ const averageMeasurements = require('./averageMeasurements');
 const scan = require('./scan');
 
 const scanDuration = 2000;
-const scanRotationOffset = 90;
+const scanRotationOffset = 45;
 
 /**
  * Resolve the angle from the given measurements
@@ -11,14 +11,14 @@ const scanRotationOffset = 90;
  */
 const decideAngle = (measurements) => {
   let angle = 0 + scanRotationOffset;
-  let direction = 'right';
+  let direction = 'Right';
 
   // TODO decide the angle
   console.log(measurements);
 
   if (angle > 180) {
     angle = 180 - (angle - 180);
-    direction = 'left';
+    direction = 'Left';
   }
 
   return Promise.resolve({ angle, direction });
@@ -26,16 +26,16 @@ const decideAngle = (measurements) => {
 
 /**
  * Rotate
- * @param {Object} motors
+ * @param {Object} main
  * @param {int} angle
  * @param {String} direction
  * @param {Object} measurements
  * @return {Promise}
  */
-const rotate = (motors, angle, direction, measurements = {}) => {
+const rotate = (main, angle, direction, measurements = {}) => {
   return new Promise((resolve) => {
-    motors.rotate(angle, direction)
-      .then(motors.stop)
+    main[`rotate${direction}`](10, angle)
+      .then(main.stop.bind(null, 1))
       .then(() => resolve(measurements));
   });
 };
@@ -43,22 +43,22 @@ const rotate = (motors, angle, direction, measurements = {}) => {
 /**
  * Solve start vector
  * @param {Object} lidar
- * @param {Object} motors
+ * @param {Object} main
  * @return {Promise}
  */
-const solveStartVector = (lidar, motors) => {
+const solveStartVector = (lidar, main) => {
   return new Promise((resolve) => {
     resolve();
     return;
     
     scan(lidar, scanDuration, 0, {})
-      .then(rotate.bind(null, motors, scanRotationOffset, 'right'))
+      .then(rotate.bind(null, main, scanRotationOffset, 'Right'))
       .then(scan.bind(null, lidar, scanDuration, scanRotationOffset))
-      .then(rotate.bind(null, motors, scanRotationOffset * 2, 'left'))
+      .then(rotate.bind(null, main, scanRotationOffset * 2, 'Left'))
       .then(scan.bind(null, lidar, scanDuration, -scanRotationOffset))
       .then(averageMeasurements)
       .then(decideAngle)
-      .then(({ angle, direction }) => rotate(motors, angle, direction))
+      .then(({ angle, direction }) => rotate(main, angle, direction))
       .then(resolve);
   });
 };

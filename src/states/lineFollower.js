@@ -1,3 +1,5 @@
+const constrain = require('../utils/constrain');
+
 /**
  * lineFollower
  * @param {Object} options
@@ -5,10 +7,10 @@
  */
 module.exports = (config, log) => {
   return ({ controllers, sensors }) => {
-    const { motors } = controllers;
+    const { speed, pid } = config;
+    const { main } = controllers;
     const { camera } = sensors;
     const startDelay = 1500;
-    const Kp = 4;
 
     let isRunning = false;
     let heartbeat;
@@ -25,8 +27,10 @@ module.exports = (config, log) => {
      * Start
      */
     function start() {
-      camera.on('data', onCameraData);
-      camera.setState('line')
+      camera.on('line', onLineData);
+      camera.on('stateChange', onStateChangeData);
+      
+      camera.setState('line', { tilt: 170 })
         .then(onLineStateSet);
     }
 
@@ -42,8 +46,10 @@ module.exports = (config, log) => {
      */
     function stop() {
       isRunning = false;
-      motors.stop();
       camera.setState('idle');
+      main.stop();
+
+      setTimeout(main.stop.bind(null, 1), 1000);
     }
 
     /**
@@ -55,29 +61,18 @@ module.exports = (config, log) => {
     }
 
     /**
-     * Camera data event handler
-     * @param {Object} data - { index, flags, x0, y0, x1, y1 }
+     * Camera line data event handler
+     * @param {Object} data
      */
-    function onCameraData(data) {
-      if (data.code === 200) {
-        centerX = data.frameWidth * 0.5;
-        return;
-      }
-
-      const { x0, x1 } = data;
+    function onLineData({ x0, x1 }) {
       const error0 = (x0 - centerX);
       const error1 = (x1 - centerX);
       const error = error0 + error1;
-      const direction = 'forward';
-      const baseSpeed = 200;
-      const leftSpeed = baseSpeed + (error * Kp);
-      const rightSpeed = baseSpeed - (error * Kp);
-      
+      const leftSpeed = constrain(Math.round(speed.lineFollowing + (error * pid.lineFollowing.Kp)), 0, 20);
+      const rightSpeed = constrain(Math.round(speed.lineFollowing - (error * pid.lineFollowing.Kp)), 0, 20);
+
       if (isRunning) {
-        motors.drive(
-          { direction, speed: leftSpeed},
-          { direction, speed: rightSpeed},
-        );
+        main.drive(leftSpeed, rightSpeed);
       }
 
       if (heartbeat) {
@@ -85,6 +80,14 @@ module.exports = (config, log) => {
       }
 
       heartbeat = setTimeout(missionComplete, 500);
+    }
+
+    /**
+     * Camera state change data event handler
+     * @param {Object} data
+     */
+    function onStateChangeData({ frameWidth }) {
+      centerX = frameWidth * 0.5;
     }
 
     constructor();

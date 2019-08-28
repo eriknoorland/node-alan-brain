@@ -10,8 +10,9 @@ const pause = require('../utils/pause');
  */
 module.exports = (config, log) => {
   return (options) => {
+    const { distance, speed } = config;
     const { controllers, sensors } = options;
-    const { motors/*, buzzer*/ } = controllers;
+    const { main } = controllers;
     const { lidar } = sensors;
     
     /**
@@ -27,19 +28,24 @@ module.exports = (config, log) => {
     function start() {
       log('start', 'backAndForth');
       
-      const driveStraightCondition = isWithinDistance.bind(null, lidar, config.distance.wall, 0);
-      const driveStraight = driveStraightUntil.bind(null, motors, driveStraightCondition);
+      const driveStraightFastCondition = isWithinDistance.bind(null, lidar, distance.front.wall.far, 0);
+      const driveStraightFast = driveStraightUntil.bind(null, speed.straight.fast, main, driveStraightFastCondition);
       
-      solveStartVector(lidar, motors)
+      const driveStraightSlowCondition = isWithinDistance.bind(null, lidar, distance.front.wall.close, 0);
+      const driveStraightSlow = driveStraightUntil.bind(null, speed.straight.slow, main, driveStraightSlowCondition);
+      
+      solveStartVector(lidar, main)
         .then(pause.bind(null, config.timeout.pause))
-        .then(driveStraight)
-        .then(motors.stop)
+        .then(driveStraightFast)
+        .then(driveStraightSlow)
+        .then(main.stop)
         .then(pause.bind(null, config.timeout.pause))
-        .then(motors.rotate.bind(null, 180, 'left'))
-        .then(motors.stop)
+        .then(main.rotateLeft.bind(null, speed.rotate.fast, 180))
+        .then(main.stop.bind(null, 1))
         .then(pause.bind(null, config.timeout.pause))
-        .then(driveStraight)
-        .then(motors.stop)
+        .then(driveStraightFast)
+        .then(driveStraightSlow)
+        .then(main.stop)
         .then(missionComplete);
     }
 
@@ -48,6 +54,7 @@ module.exports = (config, log) => {
      */
     function stop() {
       log('stop', 'backAndForth');
+      main.stop(1);
     }
 
     /**
@@ -55,6 +62,7 @@ module.exports = (config, log) => {
      */
     function missionComplete() {
       log('mission complete', 'backAndForth');
+      main.stop(1);
     }
 
     constructor();

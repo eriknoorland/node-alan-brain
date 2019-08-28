@@ -7,10 +7,13 @@ const normalizeAngle = require('../utils/normalizeAngle');
  */
 module.exports = (socket, config) => {
   return ({ sensors }) => {
-    const { encoders, lidar, imu } = sensors;
+    const { encoders, lidar, camera, main } = sensors;
 
     let lidarData = {};
+    let cameraData = {};
     let imuData = {};
+    let tickData = {};
+    let batteryData = {};
     let lastTimestamp = new Date();
     let emitInterval;
     let fps = {};
@@ -26,8 +29,15 @@ module.exports = (socket, config) => {
         lidar.on('data', onLidarData);
       }
 
-      if (imu) {
-        imu.on('data', onIMUData);
+      if (camera) {
+        camera.on('stateChange', data => cameraData = data);
+        camera.on('line', data => cameraData = data);
+      }
+
+      if (main) {
+        main.on('imu', ({ heading }) => imuData = { heading });
+        main.on('ticks', ({ right }) => tickData = { right });
+        main.on('battery', ({ voltage }) => batteryData = { voltage });
       }
     }
 
@@ -38,10 +48,14 @@ module.exports = (socket, config) => {
       socket.emit('data', {
         fps: fps,
         lidar: lidarData,
+        camera: cameraData,
         imu: imuData,
+        ticks: tickData,
+        battery: batteryData,
       });
 
       lidarData = {};
+      cameraData = {};
     }
 
     /**
@@ -54,14 +68,6 @@ module.exports = (socket, config) => {
 
         lidarData[index] = distance;
       }
-    }
-
-    /**
-     * IMU data event handler
-     * @param {Object} data
-     */
-    function onIMUData(data) {
-      imuData = data;
     }
 
     /**

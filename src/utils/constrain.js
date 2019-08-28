@@ -1,5 +1,5 @@
 /**
- * 
+ * Constrains the given number between the given min and max values
  * @param {Number} value
  * @param {Number} min
  * @param {Number} max

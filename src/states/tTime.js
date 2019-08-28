@@ -11,14 +11,13 @@ const pause = require('../utils/pause');
  */
 module.exports = (config, log) => {
   return (options) => {
+    const { distance, speed } = config;
     const { controllers, sensors } = options;
-    const { motors/*, buzzer*/ } = controllers;
+    const { main } = controllers;
     const { encoders, lidar } = sensors;
 
-    let leftEncoderCountTemp = 0;
-    let rightEncoderCountTemp = 0;
-    let leftEncoderCount = 0;
-    let rightEncoderCount = 0;
+    // let rightEncoderCountTemp
+    // let rightEncoderCount = 0;
 
     /**
      * Constructor
@@ -32,41 +31,49 @@ module.exports = (config, log) => {
      */
     function start() {
       log('start', 'tTime');
-
-      const driveTillWallCondition = isWithinDistance.bind(null, lidar, config.distance.wall, 0);
-      const driveTillWall = driveStraightUntil.bind(null, motors, driveTillWallCondition);
       
-      solveStartVector(lidar, motors)
+      const driveTillWallFastCondition = isWithinDistance.bind(null, lidar, distance.front.wall.far, 0);
+      const driveTillWallFast = driveStraightUntil.bind(null, speed.straight.fast, main, driveTillWallFastCondition);
+      
+      const driveTillWallSlowCondition = isWithinDistance.bind(null, lidar, distance.front.wall.close, 0);
+      const driveTillWallSlow = driveStraightUntil.bind(null, speed.straight.slow, main, driveTillWallSlowCondition);
+      
+      solveStartVector(lidar, main)
+        .then(main.enableTicks)
         .then(countTicks)
-        .then(driveTillWall)
-        .then(motors.stop)
+        .then(driveTillWallFast)
+        .then(driveTillWallSlow)
+        .then(main.stop)
         .then(saveCountedTicks)
         .then(pause.bind(null, config.timeout.pause))
-        .then(motors.rotate.bind(null, 180, 'left'))
-        .then(motors.stop)
+        .then(main.rotateLeft.bind(null, speed.rotate.fast, 180))
+        .then(main.stop.bind(null, 1))
         .then(pause.bind(null, config.timeout.pause))
         .then(driveTillNumTicks.bind(null, 0.5))
-        .then(motors.stop)
+        .then(main.stop)
         .then(pause.bind(null, config.timeout.pause))
-        .then(motors.rotate.bind(null, 90, 'right'))
-        .then(motors.stop)
+        .then(main.rotateRight.bind(null, speed.rotate.fast, 90))
+        .then(main.stop.bind(null, 1))
         .then(countTicks)
         .then(pause.bind(null, config.timeout.pause))
-        .then(driveTillWall)
-        .then(motors.stop)
+        .then(driveTillWallFast)
+        .then(driveTillWallSlow)
+        .then(main.stop)
         .then(pause.bind(null, config.timeout.pause))
         .then(saveCountedTicks)
-        .then(motors.rotate.bind(null, 180, 'left'))
-        .then(motors.stop)
+        .then(main.rotateLeft.bind(null, speed.rotate.fast, 180))
+        .then(main.stop.bind(null, 1))
         .then(pause.bind(null, config.timeout.pause))
         .then(driveTillNumTicks.bind(null, 1))
-        .then(motors.stop)
+        .then(main.stop)
         .then(pause.bind(null, config.timeout.pause))
-        .then(motors.rotate.bind(null, 90, 'right'))
-        .then(motors.stop)
+        .then(main.rotateRight.bind(null, speed.rotate.fast, 90))
+        .then(main.stop.bind(null, 1))
         .then(pause.bind(null, config.timeout.pause))
-        .then(driveTillWall)
-        .then(motors.stop)
+        .then(driveTillWallFast)
+        .then(driveTillWallSlow)
+        .then(main.stop)
+        .then(main.disableTicks)
         .then(missionComplete);
     }
 
@@ -75,6 +82,7 @@ module.exports = (config, log) => {
      */
     function stop() {
       log('stop', 'tTime');
+      main.stop(1);
     }
 
     /**
@@ -83,9 +91,9 @@ module.exports = (config, log) => {
      * @return {Promise}
      */
     function driveTillNumTicks(multiplier) {
-      const target = ((leftEncoderCount + rightEncoderCount) / 2) * multiplier;
+      const target = rightEncoderCount * multiplier;
 
-      return driveStraightUntil(motors, isAtNumTicks.bind(null, encoders, target));
+      return driveStraightUntil(speed.straight.fast, main, isAtNumTicks.bind(null, main, target));
     }
 
     /**
@@ -93,11 +101,9 @@ module.exports = (config, log) => {
      * @return {Promise}
      */
     function countTicks() {
-      leftEncoderCountTemp = 0;
       rightEncoderCountTemp = 0;
 
-      encoders[0].on('tick', () => leftEncoderCountTemp++);
-      encoders[1].on('tick', () => rightEncoderCountTemp++);
+      main.on('ticks', onTicksData);
 
       return Promise.resolve();
     }
@@ -107,10 +113,18 @@ module.exports = (config, log) => {
      * @return {Promise}
      */
     function saveCountedTicks() {
-      leftEncoderCount = leftEncoderCountTemp;
+      main.off('ticks', onTicksData);
       rightEncoderCount = rightEncoderCountTemp;
 
       return Promise.resolve();
+    }
+
+    /**
+     * Ticks data event handler
+     * @param {Object} data
+     */
+    function onTicksData({ right }) {
+      rightEncoderCountTemp += right;
     }
 
     /**
@@ -118,10 +132,9 @@ module.exports = (config, log) => {
      */
     function missionComplete() {
       log('mission complete', 'tTime');
+      main.stop(1);
 
-      leftEncoderCount = 0;
       rightEncoderCount = 0;
-      leftEncoderCountTemp = 0;
       rightEncoderCountTemp = 0;
     }
 

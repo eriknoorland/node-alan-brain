@@ -5,8 +5,7 @@
  */
 module.exports = (config, log, debounce) => {
   return ({ controllers, sensors, socket }) => {
-    const { motors/*, buzzer*/ } = controllers;
-    const { encoders, lidar } = sensors;
+    const { main } = controllers;
 
     /**
      * Constructor
@@ -43,31 +42,29 @@ module.exports = (config, log, debounce) => {
 
     function forward() {
       log('forward', 'remote');
-      motors.forward();
+      main.moveForward(20);
     }
 
     function reverse() {
       log('reverse', 'remote');
-      motors.reverse();
+      main.moveBackward(15);
     }
 
     function stopMotors() {
       log('stop motors', 'remote');
-      motors.stop();
+      main.stop();
     }
 
     function rotateLeft() {
       log('rotateLeft', 'remote');
-      
-      motors.rotate(90, 'left')
-        .then(motors.stop);
+      main.rotateLeft(10, 90)
+        .then(main.stop.bind(null, 1));
     }
 
     function rotateRight() {
       log('rotateRight', 'remote');
-
-      motors.rotate(90, 'right')
-        .then(motors.stop);
+      main.rotateRight(10, 90)
+        .then(main.stop.bind(null, 1));
     }
 
     constructor();
