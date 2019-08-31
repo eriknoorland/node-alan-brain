@@ -53,6 +53,8 @@ module.exports = (config, log, debounce) => {
     function stopMotors() {
       log('stop motors', 'remote');
       main.stop();
+
+      setTimeout(main.stop.bind(null, 1), 1000);
     }
 
     function rotateLeft() {

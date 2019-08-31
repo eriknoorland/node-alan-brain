@@ -1,7 +1,7 @@
 const normalizeAngle = require('./normalizeAngle');
 
 /**
- * Scan
+ * Scan accumulates lidar data for a set amount of time
  * @param {Object} lidar
  * @param {int} duration
  * @param {int} offset
@@ -10,10 +10,8 @@ const normalizeAngle = require('./normalizeAngle');
  */
 const scan = (lidar, duration, offset = 0, acc = {}) => {
   return new Promise((resolve) => {
-    let takeReadings = true;
-
-    lidar.on('data', ({ quality, angle, distance }) => {
-      if (takeReadings && quality > 10) {
+    const onLidarData = ({ quality, angle, distance }) => {
+      if (quality > 10) {
         const index = normalizeAngle(Math.round(angle) + offset);
 
         if (!acc[index]) {
@@ -22,10 +20,12 @@ const scan = (lidar, duration, offset = 0, acc = {}) => {
 
         acc[index].push(distance);
       }
-    });
+    };
+
+    lidar.on('data', onLidarData);
 
     setTimeout(() => {
-      takeReadings = false;
+      lidar.off('data', onLidarData);
       resolve(acc);
     }, duration);
   });

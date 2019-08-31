@@ -1,6 +1,6 @@
 module.exports = {
   timeout: {
-    start: 3000, // ms
+    start: 1000, // ms
     pause: 250, // ms
   },
   speed: {
@@ -29,6 +29,11 @@ module.exports = {
   pid: {
     lineFollowing: {
       Kp: 0.25,
+    },
+  },
+  obstacles: {
+    can: {
+      diameter: 6.5,
     },
   },
   loopTime: 1000 / 50, // ms

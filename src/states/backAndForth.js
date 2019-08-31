@@ -10,7 +10,7 @@ const pause = require('../utils/pause');
  */
 module.exports = (config, log) => {
   return (options) => {
-    const { distance, speed } = config;
+    const { distance, speed, timeout } = config;
     const { controllers, sensors } = options;
     const { main } = controllers;
     const { lidar } = sensors;
@@ -35,14 +35,14 @@ module.exports = (config, log) => {
       const driveStraightSlow = driveStraightUntil.bind(null, speed.straight.slow, main, driveStraightSlowCondition);
       
       solveStartVector(lidar, main)
-        .then(pause.bind(null, config.timeout.pause))
+        .then(pause.bind(null, timeout.pause))
         .then(driveStraightFast)
         .then(driveStraightSlow)
         .then(main.stop)
-        .then(pause.bind(null, config.timeout.pause))
+        .then(pause.bind(null, timeout.pause))
         .then(main.rotateLeft.bind(null, speed.rotate.fast, 180))
         .then(main.stop.bind(null, 1))
-        .then(pause.bind(null, config.timeout.pause))
+        .then(pause.bind(null, timeout.pause))
         .then(driveStraightFast)
         .then(driveStraightSlow)
         .then(main.stop)

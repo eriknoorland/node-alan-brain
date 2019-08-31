@@ -104,6 +104,8 @@ function onStop() {
       state = null;
     }
 
+    shell.exec('touch config.js');
+
     resolve();
   });
 };
@@ -133,7 +135,7 @@ function initMainController(portName) {
   mainController.init()
     .then(() => {
       log('main controller initialized!', 'app', 'cyan');
-      mainController.setLedColor(0, 255, 0);
+      mainController.setLedColor(128, 0, 128);
     });
 
   return mainController;
