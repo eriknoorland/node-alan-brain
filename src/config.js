@@ -1,29 +1,35 @@
 module.exports = {
-  timeout: {
-    start: 1000, // ms
-    pause: 250, // ms
+  robot: {
+    diameter: 24, // cm
   },
-  speed: {
+  timeout: { // ms
+    start: 1000,
+    pause: 100,
+  },
+  speed: { // cms/s
     straight: {
-      fast: 20, // cms/s
-      slow: 10, // cms/s
+      fast: 20,
+      slow: 10,
     },
     turn: {
-      fast: 15, // cms/s
-      slow: 10, // cms/s
+      fast: 15,
+      slow: 10,
     },
     rotate: {
-      fast: 10, // cms/s
-      slow: 5, // cms/s
+      fast: 10,
+      slow: 5,
     },
-    lineFollowing: 20, // cm/s
+    lineFollowing: 20,
   },
-  distance: {
+  distance: { // mm
     front: {
       wall: {
-        far: 750, // mm
-        close: 300, // mm
+        far: 750,
+        close: 300,
       },
+    },
+    gap: {
+      width: 4, // cm (options: 30, 15, 8, 4)
     },
   },
   pid: {
@@ -33,7 +39,7 @@ module.exports = {
   },
   obstacles: {
     can: {
-      diameter: 6.5,
+      diameter: 6.5, // cm
     },
   },
   loopTime: 1000 / 50, // ms

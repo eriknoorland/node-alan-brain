@@ -1,12 +1,10 @@
 const solveStartVector = require('../utils/solveStartVector');
+const gotoStartPosition = require('../utils/gotoStartPosition')(config);
 const driveStraightUntil = require('../utils/driveStraightUntil');
 const isWithinDistance = require('../utils/isWithinDistance');
 const averageMeasurements = require('../utils/averageMeasurements');
 const scan = require('../utils/scan');
 const pause = require('../utils/pause');
-
-const baseWidth = 24; // cm FIXME to config!
-const targetGapWidth = baseWidth + 4; // cm (30, 15, 8, 4)
 
 /**
  * backAndForthSuperSlalom
@@ -15,14 +13,17 @@ const targetGapWidth = baseWidth + 4; // cm (30, 15, 8, 4)
  */
 module.exports = (config, log) => {
   return (options) => {
-    const { distance, speed, timeout, obstacles } = config;
+    const { robot, distance, speed, timeout, obstacles } = config;
     const { controllers, sensors } = options;
     const { main } = controllers;
     const { lidar } = sensors;
+    const targetGapWidth = robot.diameter + distance.gap.width;
+    const rotateLeft = main.rotateLeft.bind(null, speed.rotate.slow, 90);
+    const rotateRight = main.rotateRight.bind(null, speed.rotate.slow, 90);
+    const hardStop = main.stop.bind(null, 1);
+    const delay = pause.bind(null, timeout.pause);
 
-    let referenceDistance = 0;
     let canDistance = 0;
-    let numGapsHandled = 0;
 
     /**
      * Constructor
@@ -39,47 +40,62 @@ module.exports = (config, log) => {
       const driveToEnd = driveStraightUntil.bind(null, speed.straight.slow, main, driveToEndCondition);
 
       solveStartVector(lidar, main)
-        // .then(pause.bind(null, config.timeout.pause))
-        // .then(main.rotateRight.bind(null, speed.rotate.slow, 90))
-        // .then(main.stop.bind(null, 1))
-        // .then(pause.bind(null, timeout.pause))
-        // .then(main.moveForward.bind(null, speed.straight.slow, 30)) // FIXME x cm distance
-        // .then(main.stop.bind(null, 1))
-        // .then(pause.bind(null, timeout.pause))
-        // .then(main.rotateLeft.bind(null, speed.rotate.slow, 90))
-        // .then(main.stop.bind(null, 1))
-        // .then(pause.bind(null, timeout.pause))
+        .then(delay)
+        .then(gotoStartPosition.bind(null, main, 'Right', robot.diameter))
+        .then(delay)
         
-        .then(setReferenceDistance.bind(null, 270))
-        .then(findGap.bind(null, 'Left', targetGapWidth))
-        .then(moveThroughGap.bind(null, 'Left', targetGapWidth))
+        .then(slalom.bind(null, 'Left'))
+        .then(delay)
 
-        .then(setReferenceDistance.bind(null, 90))
-        .then(findGap.bind(null, 'Right', targetGapWidth))
-        .then(moveThroughGap.bind(null, 'Right', targetGapWidth))
-        // .then(pause.bind(null, timeout.pause))
+        .then(slalom.bind(null, 'Right'))
+        .then(delay)
 
-        // .then(driveToEnd)
-        // .then(main.stop.bind(null, 1))
-        // .then(main.rotateLeft.bind(null, speed.rotate.slow, 90))
-        // .then(main.stop.bind(null, 1))
-        // .then(pause.bind(null, timeout.pause))
-        // .then(main.moveForward.bind(null, speed.straight.slow, 30)) // FIXME x cm distance
-        // .then(main.stop.bind(null, 1))
-        // .then(pause.bind(null, timeout.pause))
-        // .then(main.rotateLeft.bind(null, speed.rotate.slow, 90))
-        // .then(setReferenceDistance.bind(null, 270))
+        .then(driveToEnd)
+        .then(hardStop)
+        .then(delay)
+        .then(rotateLeft)
+        .then(hardStop)
+        .then(delay)
+        .then(main.moveForward.bind(null, speed.straight.slow, robot.diameter))
+        .then(hardStop)
+        .then(delay)
+        .then(rotateLeft)
+        .then(hardStop)
+        .then(delay)
         
-        // .then(findGap.bind(null, 'Left', targetGapWidth))
-        // .then(pause.bind(null, timeout.pause))
-        // .then(findGap.bind(null, 'Right', targetGapWidth))
-        // .then(pause.bind(null, timeout.pause))
+        .then(slalom.bind(null, 'Left'))
+        .then(delay)
 
-        // .then(driveToEnd)
-        // .then(main.stop)
+        .then(slalom.bind(null, 'Right'))
+        .then(delay)
+
+        .then(driveToEnd)
+        .then(hardStop)
         .then(missionComplete);
     }
 
+    /**
+     * Slalom
+     * @param {String} side
+     * @return {Promise}
+     */
+    async function slalom(side) {
+      const referenceAngle = side === 'Left' ? 270 : 90;
+      const referenceDistance = await getReferenceDistance(referenceAngle));
+
+      await findGap(side, targetGapWidth, referenceDistance);
+      await moveThroughGap(side, targetGapWidth);
+
+      return Promise.resolve();
+    }
+
+    /**
+     * Resolves the given function when the condition criteria are met
+     * @param {Object} lidar
+     * @param {Number} referenceDistance
+     * @param {Number} checkAngle
+     * @param {Function} resolve
+     */
     function driveToNextCanCondition(lidar, referenceDistance, checkAngle, resolve) {
       let count = 0;
 
@@ -106,10 +122,11 @@ module.exports = (config, log) => {
      * Find gap
      * @param {String} side
      * @param {Number} targetGapWidth
+     * @param {Number} referenceDistance
      * @param {Number} count
      * @return {Promise}
      */
-    async function findGap(side, targetGapWidth, count = 0) {
+    async function findGap(side, targetGapWidth, referenceDistance, count = 0) {
       const driveSpeed = 5; // count ? 5 : speed.straight.slow;
       const checkAngle = side === 'Left' ? 270 : 90;
       const condition = driveToNextCanCondition.bind(null, lidar, referenceDistance, checkAngle);
@@ -123,7 +140,7 @@ module.exports = (config, log) => {
       await main.stop(1);
       // await pause(timeout.pause);
       
-      if (await checkForGap(side)) {
+      if (await checkForGap(side, referenceDistance)) {
         console.log('gap found!');
 
         await main.stop();
@@ -132,7 +149,7 @@ module.exports = (config, log) => {
         return Promise.resolve();
       }
 
-      return findGap(side, targetGapWidth, count + 1);
+      return findGap(side, targetGapWidth, referenceDistance, count + 1);
     }
 
     /**
@@ -140,7 +157,7 @@ module.exports = (config, log) => {
      * @param {String} side
      * @return {Promise}
      */
-    function checkForGap(side) {
+    function checkForGap(side, referenceDistance) {
       const getGapSize = (measurements) => {
         let gapSize = 0;
 
@@ -198,7 +215,7 @@ module.exports = (config, log) => {
           .then(averageMeasurements)
           .then(getGapSize)
           .then((size) => {
-            resolve(size >= baseWidth);
+            resolve(size >= robot.diameter);
           });
       });
     }
@@ -210,54 +227,40 @@ module.exports = (config, log) => {
      * @return {Promise}
      */
     function moveThroughGap(side, targetGapWidth) {
-      const rotate = `rotate${side}`;
-      const rotateBack = `rotate${side === 'Left' ? 'Right' : 'Left'}`;
+      const rotateIn = side === 'Left' ? rotateLeft : rotateRight;
+      const rotateOut = side === 'Left' ? rotateRight : rotateLeft;
       const crossingDistance = Math.round(((canDistance / 10) * 2) + Math.round(obstacles.can.diameter / 2));
       const gapCenter = Math.ceil(Math.round(obstacles.can.diameter / 2) + (targetGapWidth / 2));
-      
-      console.log('moveThroughGap');
-      console.log('canDistance', canDistance);
-      console.log('crossingDistance', crossingDistance);
-      console.log('targetGapWidth', targetGapWidth, Math.ceil(targetGapWidth / 2));
 
       return new Promise((resolve) => {
         main.moveForward(5, gapCenter)
-          .then(main.stop.bind(null, 1))
-          .then(pause.bind(null, timeout.pause))
-          .then(main[rotate].bind(null, 5, 90))
-          .then(main.stop.bind(null, 1))
-          .then(pause.bind(null, timeout.pause))
+          .then(hardStop)
+          .then(delay)
+          .then(rotateIn)
+          .then(hardStop)
+          .then(delay)
           .then(main.moveForward.bind(null, 5, crossingDistance))
-          .then(main.stop.bind(null, 1))
-          .then(pause.bind(null, timeout.pause))
-          .then(main[rotateBack].bind(null, 5, 90))
-          .then(main.stop.bind(null, 1))
-          .then(pause.bind(null, timeout.pause))
+          .then(hardStop)
+          .then(delay)
+          .then(rotateOut)
+          .then(hardStop)
           .then(resolve);
       });
     }
 
     /**
-     * Sets the minimal reference distance for a given angle
-     * @param {String} side
+     * Returns the distance measured for a given angle
+     * @param {Number} angle
      * @return {Promise}
      */
-    function setReferenceDistance(angle) {
-      const getReferenceDistance = (measurements) => {
-        const distance = measurements[angle];
-
-        return Promise.resolve(distance);
-      };
+    function getReferenceDistance(angle) {
+      const getDistance = measurements => Promise.resolve(measurements[angle]);
 
       return new Promise((resolve) => {
-        scan(lidar, 500, 0, {})
+        scan(lidar, 250, 0, {})
           .then(averageMeasurements)
-          .then(getReferenceDistance)
-          .then((distance) => {
-            referenceDistance = distance;
-            console.log('referenceDistance', referenceDistance);
-            resolve();
-          })
+          .then(getDistance)
+          .then(resolve);
       });
     }
 

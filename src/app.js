@@ -104,7 +104,7 @@ function onStop() {
       state = null;
     }
 
-    shell.exec('touch config.js');
+    shell.exec('touch ./src/config.js');
 
     resolve();
   });
@@ -117,11 +117,7 @@ function onShutdown() {
   log('shutdown', 'app', 'red');
   
   mainController.setLedColor(0, 0, 0);
-  
-  onStop()
-    .then(() => {
-      shell.exec('sudo shutdown -h now');
-    });
+  shell.exec('sudo shutdown -h now');
 }
 
 /**
