@@ -16,8 +16,8 @@ module.exports = (config, log) => {
     const { main } = controllers;
     const { encoders, lidar } = sensors;
 
-    // let rightEncoderCountTemp
-    // let rightEncoderCount = 0;
+    let rightEncoderCountTemp
+    let rightEncoderCount = 0;
 
     /**
      * Constructor

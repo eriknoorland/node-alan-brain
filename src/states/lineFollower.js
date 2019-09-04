@@ -29,7 +29,6 @@ module.exports = (config, log) => {
     function start() {
       camera.on('line', onLineData);
       camera.on('stateChange', onStateChangeData);
-      
       camera.setState('line', { tilt: 170 })
         .then(onLineStateSet);
     }
@@ -46,6 +45,9 @@ module.exports = (config, log) => {
      */
     function stop() {
       isRunning = false;
+
+      camera.off('line', onLineData);
+      camera.off('stateChange', onStateChangeData);
       camera.setState('idle');
       main.stop();
 

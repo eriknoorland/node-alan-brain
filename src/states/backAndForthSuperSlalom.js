@@ -1,20 +1,19 @@
-const solveStartVector = require('../utils/solveStartVector');
-const gotoStartPosition = require('../utils/gotoStartPosition')(config);
-const driveStraightUntil = require('../utils/driveStraightUntil');
-const isWithinDistance = require('../utils/isWithinDistance');
-const averageMeasurements = require('../utils/averageMeasurements');
-const scan = require('../utils/scan');
-const pause = require('../utils/pause');
-
 /**
  * backAndForthSuperSlalom
  * @param {Object} options
  * @return {Object}
  */
 module.exports = (config, log) => {
-  return (options) => {
-    const { robot, distance, speed, timeout, obstacles } = config;
-    const { controllers, sensors } = options;
+  const { robot, distance, speed, timeout, obstacles } = config;
+  const solveStartVector = require('../utils/solveStartVector');
+  const gotoStartPosition = require('../utils/gotoStartPosition')(config);
+  const driveStraightUntil = require('../utils/driveStraightUntil');
+  const isWithinDistance = require('../utils/isWithinDistance');
+  // const averageMeasurements = require('../utils/averageMeasurements');
+  // const scan = require('../utils/scan');
+  const pause = require('../utils/pause');
+
+  return ({ controllers, sensors }) => {
     const { main } = controllers;
     const { lidar } = sensors;
     const targetGapWidth = robot.diameter + distance.gap.width;
@@ -22,7 +21,7 @@ module.exports = (config, log) => {
     const rotateRight = main.rotateRight.bind(null, speed.rotate.slow, 90);
     const hardStop = main.stop.bind(null, 1);
     const delay = pause.bind(null, timeout.pause);
-
+    const lidarData = {};
     let canDistance = 0;
 
     /**
@@ -39,17 +38,16 @@ module.exports = (config, log) => {
       const driveToEndCondition = isWithinDistance.bind(null, lidar, distance.front.wall.close, 0);
       const driveToEnd = driveStraightUntil.bind(null, speed.straight.slow, main, driveToEndCondition);
 
+      lidar.on('data', onLidarData);
+
       solveStartVector(lidar, main)
         .then(delay)
         .then(gotoStartPosition.bind(null, main, 'Right', robot.diameter))
         .then(delay)
-        
         .then(slalom.bind(null, 'Left'))
         .then(delay)
-
         .then(slalom.bind(null, 'Right'))
         .then(delay)
-
         .then(driveToEnd)
         .then(hardStop)
         .then(delay)
@@ -62,13 +60,10 @@ module.exports = (config, log) => {
         .then(rotateLeft)
         .then(hardStop)
         .then(delay)
-        
         .then(slalom.bind(null, 'Left'))
         .then(delay)
-
         .then(slalom.bind(null, 'Right'))
         .then(delay)
-
         .then(driveToEnd)
         .then(hardStop)
         .then(missionComplete);
@@ -81,41 +76,53 @@ module.exports = (config, log) => {
      */
     async function slalom(side) {
       const referenceAngle = side === 'Left' ? 270 : 90;
-      const referenceDistance = await getReferenceDistance(referenceAngle));
+      // const referenceDistance = await getReferenceDistance(referenceAngle));
 
-      await findGap(side, targetGapWidth, referenceDistance);
+      await findGap(side, targetGapWidth, lidarData[referenceAngle]);
       await moveThroughGap(side, targetGapWidth);
 
       return Promise.resolve();
     }
 
     /**
-     * Resolves the given function when the condition criteria are met
-     * @param {Object} lidar
+     * Resolves when the condition criteria are met
      * @param {Number} referenceDistance
-     * @param {Number} checkAngle
-     * @param {Function} resolve
+     * @param {Number} angle
      */
-    function driveToNextCanCondition(lidar, referenceDistance, checkAngle, resolve) {
-      let count = 0;
-
+    function driveToNextCanCondition(referenceDistance, angle) {
       canDistance = referenceDistance;
 
-      const onLidarData = ({ quality, angle, distance }) => {
-        if (quality > 10 && Math.floor(angle) === checkAngle) {
+      return new Promise((resolve) => {
+        const interval = setInterval(() => {
+          const distance = lidarData[angle];
+
           if (distance && distance < (referenceDistance - 100) && distance < 300) {
             canDistance = Math.min(canDistance, distance);
-            count += 1;
-
-            if (count % 2 === 0) {
-              lidar.off('data', onLidarData);
-              resolve();
-            }
+            clearInterval(interval);
+            resolve();
           }
-        }
-      };
+        }, 100);
+      });
 
-      lidar.on('data', onLidarData);
+      // let count = 0;
+
+      // canDistance = referenceDistance;
+
+      // const onLidarData = ({ quality, angle, distance }) => {
+      //   if (quality > 10 && Math.floor(angle) === checkAngle) {
+      //     if (distance && distance < (referenceDistance - 100) && distance < 300) {
+      //       canDistance = Math.min(canDistance, distance);
+      //       count += 1;
+
+      //       if (count % 2 === 0) {
+      //         lidar.off('data', onLidarData);
+      //         resolve();
+      //       }
+      //     }
+      //   }
+      // };
+
+      // lidar.on('data', onLidarData);
     }
 
     /**
@@ -129,20 +136,16 @@ module.exports = (config, log) => {
     async function findGap(side, targetGapWidth, referenceDistance, count = 0) {
       const driveSpeed = 5; // count ? 5 : speed.straight.slow;
       const checkAngle = side === 'Left' ? 270 : 90;
-      const condition = driveToNextCanCondition.bind(null, lidar, referenceDistance, checkAngle);
-      const driveStraight = driveStraightUntil.bind(null, driveSpeed, main, condition);
+      const driveStraightCondition = driveToNextCanCondition.bind(null, referenceDistance, checkAngle);
 
       if (count > 0) {
         await main.moveForward(driveSpeed, Math.round(obstacles.can.diameter));
       }
 
-      await driveStraight();
+      await driveStraightUntil(driveSpeed, main, driveStraightCondition);
       await main.stop(1);
-      // await pause(timeout.pause);
       
       if (await checkForGap(side, referenceDistance)) {
-        console.log('gap found!');
-
         await main.stop();
         await pause(timeout.pause);
 
@@ -157,7 +160,7 @@ module.exports = (config, log) => {
      * @param {String} side
      * @return {Promise}
      */
-    function checkForGap(side, referenceDistance) {
+    async function checkForGap(side, referenceDistance) {
       const getGapSize = (measurements) => {
         let gapSize = 0;
 
@@ -210,14 +213,18 @@ module.exports = (config, log) => {
         return Promise.resolve(gapSize);
       };
 
-      return new Promise((resolve) => {
-        scan(lidar, 250, 0, {})
-          .then(averageMeasurements)
-          .then(getGapSize)
-          .then((size) => {
-            resolve(size >= robot.diameter);
-          });
-      });
+      const gapSize = await getGapSize(lidarData);
+
+      return Promise.resolve(gapSize >= robot.diameter);
+
+      // return new Promise((resolve) => {
+      //   scan(lidar, 250, 0, {})
+      //     .then(averageMeasurements)
+      //     .then(getGapSize)
+      //     .then((size) => {
+      //       resolve(size >= robot.diameter);
+      //     });
+      // });
     }
 
     /**
@@ -253,22 +260,33 @@ module.exports = (config, log) => {
      * @param {Number} angle
      * @return {Promise}
      */
-    function getReferenceDistance(angle) {
-      const getDistance = measurements => Promise.resolve(measurements[angle]);
+    // function getReferenceDistance(angle) {
+    //   const getDistance = measurements => Promise.resolve(measurements[angle]);
 
-      return new Promise((resolve) => {
-        scan(lidar, 250, 0, {})
-          .then(averageMeasurements)
-          .then(getDistance)
-          .then(resolve);
-      });
-    }
+    //   return new Promise((resolve) => {
+    //     scan(lidar, 250, 0, {})
+    //       .then(averageMeasurements)
+    //       .then(getDistance)
+    //       .then(resolve);
+    //   });
+    // }
+
+    /**
+     * Lidar data event handler
+     * @param {Object} data
+     */
+    function onLidarData({ quality, angle, distance }) {
+      if (quality > 10) {
+        lidarData[Math.floor(angle)] = distance;
+      }
+    };
 
     /**
      * Stop
      */
     function stop() {
       log('stop', 'backAndForthSuperSlalom');
+      
       main.stop(1);
     }
 
@@ -277,6 +295,8 @@ module.exports = (config, log) => {
      */
     function missionComplete() {
       log('mission complete', 'backAndForthSuperSlalom');
+      
+      lidar.off('data', onLidarData);
       main.stop(1);
     }
 
