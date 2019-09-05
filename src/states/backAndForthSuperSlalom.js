@@ -49,13 +49,13 @@ module.exports = (config, log) => {
         .then(slalom.bind(null, 'Right'))
         .then(delay)
         .then(driveToEnd)
-        .then(hardStop)
+        .then(main.stop.bind(null))
         .then(delay)
         .then(rotateLeft)
         .then(hardStop)
         .then(delay)
-        .then(main.moveForward.bind(null, speed.straight.slow, robot.diameter))
-        .then(hardStop)
+        .then(main.moveForward.bind(null, speed.straight.slow, Math.floor(robot.diameter + (obstacles.can.diameter * 2))))
+        .then(main.stop.bind(null))
         .then(delay)
         .then(rotateLeft)
         .then(hardStop)
@@ -65,7 +65,7 @@ module.exports = (config, log) => {
         .then(slalom.bind(null, 'Right'))
         .then(delay)
         .then(driveToEnd)
-        .then(hardStop)
+        .then(main.stop.bind(null))
         .then(missionComplete);
     }
 
@@ -76,8 +76,8 @@ module.exports = (config, log) => {
      */
     async function slalom(side) {
       const referenceAngle = side === 'Left' ? 270 : 90;
-      // const referenceDistance = await getReferenceDistance(referenceAngle));
 
+      await delay();
       await findGap(side, targetGapWidth, lidarData[referenceAngle]);
       await moveThroughGap(side, targetGapWidth);
 
@@ -101,7 +101,7 @@ module.exports = (config, log) => {
             clearInterval(interval);
             resolve();
           }
-        }, 100);
+        }, 30);
       });
 
       // let count = 0;
