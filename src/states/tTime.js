@@ -82,7 +82,11 @@ module.exports = (config, log) => {
      */
     function stop() {
       log('stop', 'tTime');
+
       main.stop(1);
+      
+      rightEncoderCount = 0;
+      rightEncoderCountTemp = 0;
     }
 
     /**
@@ -132,10 +136,7 @@ module.exports = (config, log) => {
      */
     function missionComplete() {
       log('mission complete', 'tTime');
-      main.stop(1);
-
-      rightEncoderCount = 0;
-      rightEncoderCountTemp = 0;
+      stop();
     }
 
     constructor();

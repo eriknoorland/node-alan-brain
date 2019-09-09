@@ -62,7 +62,7 @@ module.exports = (config, log) => {
      */
     function missionComplete() {
       log('mission complete', 'backAndForth');
-      main.stop(1);
+      stop();
     }
 
     constructor();

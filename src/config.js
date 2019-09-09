@@ -9,7 +9,9 @@ module.exports = {
   speed: { // cms/s
     straight: {
       fast: 20,
+      medium: 15,
       slow: 10,
+      precision: 5,
     },
     turn: {
       fast: 15,

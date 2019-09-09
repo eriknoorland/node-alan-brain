@@ -9,9 +9,6 @@ module.exports = (config, log) => {
   const gotoStartPosition = require('../utils/gotoStartPosition')(config);
   const driveStraightUntil = require('../utils/driveStraightUntil');
   const isWithinDistance = require('../utils/isWithinDistance');
-  // const averageMeasurements = require('../utils/averageMeasurements');
-  // const scan = require('../utils/scan');
-  const pause = require('../utils/pause');
 
   return ({ controllers, sensors }) => {
     const { main } = controllers;
@@ -20,15 +17,14 @@ module.exports = (config, log) => {
     const rotateLeft = main.rotateLeft.bind(null, speed.rotate.slow, 90);
     const rotateRight = main.rotateRight.bind(null, speed.rotate.slow, 90);
     const hardStop = main.stop.bind(null, 1);
-    const delay = pause.bind(null, timeout.pause);
     const lidarData = {};
-    let canDistance = 0;
 
     /**
      * Constructor
      */
     function constructor() {
       log('constructor', 'backAndForthSuperSlalom');
+      lidar.on('data', onLidarData);
     }
 
     /**
@@ -38,32 +34,20 @@ module.exports = (config, log) => {
       const driveToEndCondition = isWithinDistance.bind(null, lidar, distance.front.wall.close, 0);
       const driveToEnd = driveStraightUntil.bind(null, speed.straight.slow, main, driveToEndCondition);
 
-      lidar.on('data', onLidarData);
-
       solveStartVector(lidar, main)
-        .then(delay)
         .then(gotoStartPosition.bind(null, main, 'Right', robot.diameter))
-        .then(delay)
         .then(slalom.bind(null, 'Left'))
-        .then(delay)
         .then(slalom.bind(null, 'Right'))
-        .then(delay)
         .then(driveToEnd)
         .then(main.stop.bind(null))
-        .then(delay)
         .then(rotateLeft)
         .then(hardStop)
-        .then(delay)
         .then(main.moveForward.bind(null, speed.straight.slow, Math.floor(robot.diameter + (obstacles.can.diameter * 2))))
         .then(main.stop.bind(null))
-        .then(delay)
         .then(rotateLeft)
         .then(hardStop)
-        .then(delay)
         .then(slalom.bind(null, 'Left'))
-        .then(delay)
         .then(slalom.bind(null, 'Right'))
-        .then(delay)
         .then(driveToEnd)
         .then(main.stop.bind(null))
         .then(missionComplete);
@@ -76,9 +60,9 @@ module.exports = (config, log) => {
      */
     async function slalom(side) {
       const referenceAngle = side === 'Left' ? 270 : 90;
+      const referenceDistance = getAngleDistance(lidarData, referenceAngle);
 
-      await delay();
-      await findGap(side, targetGapWidth, lidarData[referenceAngle]);
+      await findGap(side, targetGapWidth, referenceDistance);
       await moveThroughGap(side, targetGapWidth);
 
       return Promise.resolve();
@@ -90,39 +74,19 @@ module.exports = (config, log) => {
      * @param {Number} angle
      */
     function driveToNextCanCondition(referenceDistance, angle) {
-      canDistance = referenceDistance;
+      let canDistance = referenceDistance;
 
       return new Promise((resolve) => {
         const interval = setInterval(() => {
-          const distance = lidarData[angle];
+          const distance = getAngleDistance(lidarData, angle);
 
-          if (distance && distance < (referenceDistance - 100) && distance < 300) {
+          if (distance && distance < (referenceDistance - 100)) {
             canDistance = Math.min(canDistance, distance);
             clearInterval(interval);
             resolve();
           }
         }, 30);
       });
-
-      // let count = 0;
-
-      // canDistance = referenceDistance;
-
-      // const onLidarData = ({ quality, angle, distance }) => {
-      //   if (quality > 10 && Math.floor(angle) === checkAngle) {
-      //     if (distance && distance < (referenceDistance - 100) && distance < 300) {
-      //       canDistance = Math.min(canDistance, distance);
-      //       count += 1;
-
-      //       if (count % 2 === 0) {
-      //         lidar.off('data', onLidarData);
-      //         resolve();
-      //       }
-      //     }
-      //   }
-      // };
-
-      // lidar.on('data', onLidarData);
     }
 
     /**
@@ -134,7 +98,7 @@ module.exports = (config, log) => {
      * @return {Promise}
      */
     async function findGap(side, targetGapWidth, referenceDistance, count = 0) {
-      const driveSpeed = 5; // count ? 5 : speed.straight.slow;
+      const driveSpeed = count ? speed.straight.precision : speed.straight.medium;
       const checkAngle = side === 'Left' ? 270 : 90;
       const driveStraightCondition = driveToNextCanCondition.bind(null, referenceDistance, checkAngle);
 
@@ -143,11 +107,9 @@ module.exports = (config, log) => {
       }
 
       await driveStraightUntil(driveSpeed, main, driveStraightCondition);
-      await main.stop(1);
       
       if (await checkForGap(side, referenceDistance)) {
         await main.stop();
-        await pause(timeout.pause);
 
         return Promise.resolve();
       }
@@ -161,70 +123,54 @@ module.exports = (config, log) => {
      * @return {Promise}
      */
     async function checkForGap(side, referenceDistance) {
-      const getGapSize = (measurements) => {
-        let gapSize = 0;
+      const getGapSize = (data, angle, correctedAngle) =>  {
+        const measuredS = data[angle]; // mm
 
-        // FIXME calcuate how far (angle) to look ahead
+        if (measuredS) {
+          const referenceS = referenceDistance / Math.cos(correctedAngle * (Math.PI / 180)); // mm
+
+          if (measuredS < (referenceS - 100)) {
+            return (Math.sin(correctedAngle * (Math.PI / 180)) * measuredS) / 10; // cm
+          }
+        }
+
+        return 0;
+      };
+
+      const checkAngles = (measurements) => {
         const filteredMeasurements = Object.keys(measurements)
-          .filter(key => side === 'Left' ? key > 270 : key < 90)
+          .filter(key => side === 'Left' ? key > 290 : key < 70)
           .reduce((acc, key) => {
             acc[key] = measurements[key];
             return acc;
           }, {});
 
         if (side === 'Left') {
-          for (let i = 270, x = Object.keys(filteredMeasurements).length; i < 270 + x; i++) {
-            const angle = i;
+          for (let angle = 290, x = Object.keys(filteredMeasurements).length; angle < 290 + x; angle++) {
+            const gapSize = getGapSize(filteredMeasurements, angle, angle - 270);
 
-            if(angle >= 290) {
-              const measuredS = filteredMeasurements[angle]; // mm
-
-              if (measuredS) {
-                const referenceS = referenceDistance / Math.cos((angle - 270) * (Math.PI / 180)); // mm
-
-                if (measuredS < (referenceS - 100)) {
-                  gapSize = (Math.sin((angle - 270) * (Math.PI / 180)) * measuredS) / 10; // cm
-                  console.log(`it seems there is an obstacle at ${angle} degrees at a distance of ${gapSize} cm`);
-                  break;
-                }
-              }
+            if (gapSize) {
+              console.log(`it seems there is an obstacle at ${angle} degrees at a distance of ${gapSize} cm`);
+              return Promise.resolve(gapSize);
             }
           }
         } else {
-          for (let i = 90, x = Object.keys(filteredMeasurements).length; i >= 0; i--) {
-            const angle = i;
+          for (let angle = 70, x = Object.keys(filteredMeasurements).length; angle >= 0; angle--) {
+            const gapSize = getGapSize(filteredMeasurements, angle, 90 - angle);
 
-            if (angle <= 70) {
-              const measuredS = filteredMeasurements[angle]; // mm
-
-              if (measuredS) {
-                const referenceS = referenceDistance / Math.cos((90 - angle) * (Math.PI / 180)); // mm
-
-                if (measuredS < (referenceS - 100)) {
-                  gapSize = (Math.sin((90 - angle) * (Math.PI / 180)) * measuredS) / 10; // cm
-                  console.log(`it seems there is an obstacle at ${angle} degrees at a distance of ${gapSize} cm`);                  
-                  break;
-                }
-              }
+            if (gapSize) {
+              console.log(`it seems there is an obstacle at ${angle} degrees at a distance of ${gapSize} cm`);
+              return Promise.resolve(gapSize);
             }
           }
         }
         
-        return Promise.resolve(gapSize);
+        return Promise.resolve(0);
       };
 
-      const gapSize = await getGapSize(lidarData);
+      const gapSize = await checkAngles(lidarData);
 
       return Promise.resolve(gapSize >= robot.diameter);
-
-      // return new Promise((resolve) => {
-      //   scan(lidar, 250, 0, {})
-      //     .then(averageMeasurements)
-      //     .then(getGapSize)
-      //     .then((size) => {
-      //       resolve(size >= robot.diameter);
-      //     });
-      // });
     }
 
     /**
@@ -236,19 +182,18 @@ module.exports = (config, log) => {
     function moveThroughGap(side, targetGapWidth) {
       const rotateIn = side === 'Left' ? rotateLeft : rotateRight;
       const rotateOut = side === 'Left' ? rotateRight : rotateLeft;
-      const crossingDistance = Math.round(((canDistance / 10) * 2) + Math.round(obstacles.can.diameter / 2));
+      const obstacleAngle = side === 'Left' ? 270 : 90;
+      const obstacleDistance = getAngleDistance(lidarData, obstacleAngle);
+      const crossingDistance = Math.round(((obstacleDistance / 10) * 2) + Math.round(obstacles.can.diameter / 2));
       const gapCenter = Math.ceil(Math.round(obstacles.can.diameter / 2) + (targetGapWidth / 2));
 
       return new Promise((resolve) => {
         main.moveForward(5, gapCenter)
           .then(hardStop)
-          .then(delay)
           .then(rotateIn)
           .then(hardStop)
-          .then(delay)
           .then(main.moveForward.bind(null, 5, crossingDistance))
           .then(hardStop)
-          .then(delay)
           .then(rotateOut)
           .then(hardStop)
           .then(resolve);
@@ -256,27 +201,26 @@ module.exports = (config, log) => {
     }
 
     /**
-     * Returns the distance measured for a given angle
+     * Returns the smallest distance measured for a given angle with a given range
+     * @param {Object} data
      * @param {Number} angle
+     * @param {Number} range
      * @return {Promise}
      */
-    // function getReferenceDistance(angle) {
-    //   const getDistance = measurements => Promise.resolve(measurements[angle]);
+    function getAngleDistance(data, angle, range = 5) {
+      const distances = Object.keys(lidarData)
+        .filter(a => a >= angle - 5 && a <= angle + 5)
+        .map(a => data[a]);
 
-    //   return new Promise((resolve) => {
-    //     scan(lidar, 250, 0, {})
-    //       .then(averageMeasurements)
-    //       .then(getDistance)
-    //       .then(resolve);
-    //   });
-    // }
+      return Math.min(...distances);
+    }
 
     /**
      * Lidar data event handler
      * @param {Object} data
      */
     function onLidarData({ quality, angle, distance }) {
-      if (quality > 10) {
+      if (distance) {
         lidarData[Math.floor(angle)] = distance;
       }
     };
@@ -287,6 +231,7 @@ module.exports = (config, log) => {
     function stop() {
       log('stop', 'backAndForthSuperSlalom');
       
+      lidar.off('data', onLidarData);
       main.stop(1);
     }
 
@@ -295,9 +240,7 @@ module.exports = (config, log) => {
      */
     function missionComplete() {
       log('mission complete', 'backAndForthSuperSlalom');
-      
-      lidar.off('data', onLidarData);
-      main.stop(1);
+      stop();
     }
 
     constructor();
