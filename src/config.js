@@ -21,7 +21,7 @@ module.exports = {
       fast: 10,
       slow: 5,
     },
-    lineFollowing: 20,
+    lineFollowing: 15,
   },
   distance: { // mm
     front: {
@@ -36,7 +36,7 @@ module.exports = {
   },
   pid: {
     lineFollowing: {
-      Kp: 0.25,
+      Kp: 0.5,
     },
   },
   obstacles: {
