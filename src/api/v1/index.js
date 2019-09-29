@@ -1,5 +1,6 @@
 const fs = require('fs');
 const express = require('express');
+
 const router = express.Router();
 
 router.get('/settings', (request, response) => {
@@ -9,7 +10,7 @@ router.get('/settings', (request, response) => {
   });
 });
 
-router.put('/settings', (request, response) => {
+router.put('/settings', () => {
   // JSON.stringify(request.body, null, 2);
   // get body from request
   // JSON.parse

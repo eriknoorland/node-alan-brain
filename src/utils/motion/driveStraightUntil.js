@@ -7,7 +7,7 @@
  */
 const driveStraightUntil = (speed, main, condition) => {
   main.moveForward(speed);
-  
+
   return condition();
 };
 

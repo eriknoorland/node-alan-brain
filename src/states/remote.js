@@ -1,79 +1,86 @@
+const config = require('../config');
+const rotate = require('../utils/motion/rotate');
+
 /**
  * Remote
  * @param {Object} options
  * @return {Object}
  */
-module.exports = (config, log, debounce) => {
-  return ({ controllers, sensors, socket }) => {
-    const { main } = controllers;
+module.exports = ({ logger, controllers, socket }) => {
+  const { main } = controllers;
 
-    /**
-     * Constructor
-     */
-    function constructor() {
-      log('constructor', 'remote');
-    }
+  /**
+   * Constructor
+   */
+  function constructor() {
+    logger.log('constructor', 'remote');
+  }
 
-    /**
-     * Start
-     */
-    function start() {
-      log('start', 'remote');
+  /**
+   * Start
+   */
+  function start() {
+    logger.log('start', 'remote');
 
-      socket.on('remote.forward', forward);
-      socket.on('remote.reverse', reverse);
-      socket.on('remote.stop', stopMotors);
-      socket.on('remote.rotateLeft', rotateLeft);
-      socket.on('remote.rotateRight', rotateRight);
-    }
+    socket.on('remote.forward', forward);
+    socket.on('remote.reverse', reverse);
+    socket.on('remote.stop', stopMotors);
+    socket.on('remote.rotateLeft', rotateLeft);
+    socket.on('remote.rotateRight', rotateRight);
+  }
 
-    /**
-     * Start
-     */
-    function stop() {
-      log('stop', 'remote');
+  /**
+   * Start
+   */
+  function stop() {
+    logger.log('stop', 'remote');
 
-      socket.removeListener('remote.forward', forward);
-      socket.removeListener('remote.reverse', reverse);
-      socket.removeListener('remote.stop', stopMotors);
-      socket.removeListener('remote.rotateLeft', rotateLeft);
-      socket.removeListener('remote.rotateRight', rotateRight);
-    }
+    socket.removeListener('remote.forward', forward);
+    socket.removeListener('remote.reverse', reverse);
+    socket.removeListener('remote.stop', stopMotors);
+    socket.removeListener('remote.rotateLeft', rotateLeft);
+    socket.removeListener('remote.rotateRight', rotateRight);
+  }
 
-    function forward() {
-      log('forward', 'remote');
-      main.moveForward(20);
-    }
+  function forward() {
+    logger.log('forward', 'remote');
+    main.moveForward(config.speed.straight.fast);
+  }
 
-    function reverse() {
-      log('reverse', 'remote');
-      main.moveBackward(15);
-    }
+  function reverse() {
+    logger.log('reverse', 'remote');
+    main.moveBackward(config.speed.straight.medium);
+  }
 
-    function stopMotors() {
-      log('stop motors', 'remote');
-      main.stop();
+  function stopMotors() {
+    logger.log('stop motors', 'remote');
+    main.stop();
 
-      setTimeout(main.stop.bind(null, 1), 1000);
-    }
+    setTimeout(main.stop.bind(null, 1), 1000);
+  }
 
-    function rotateLeft() {
-      log('rotateLeft', 'remote');
-      main.rotateLeft(10, 90)
-        .then(main.stop.bind(null, 1));
-    }
+  function rotateLeft() {
+    logger.log('rotateLeft', 'remote');
 
-    function rotateRight() {
-      log('rotateRight', 'remote');
-      main.rotateRight(10, 90)
-        .then(main.stop.bind(null, 1));
-    }
+    rotate(main, -90);
 
-    constructor();
+    // main.rotate(config.speed.rotate.fast, -90)
+    //   .then(main.stop.bind(null, 1));
+  }
 
-    return {
-      start,
-      stop,
-    };
+  function rotateRight() {
+    logger.log('rotateRight', 'remote');
+
+    rotate(main, 90);
+
+    // main.rotate(config.speed.rotate.fast, 90)
+    //   .then(main.stop.bind(null, 1));
+  }
+
+  constructor();
+
+  return {
+    start,
+    stop,
   };
 };

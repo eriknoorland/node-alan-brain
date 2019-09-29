@@ -1,75 +1,67 @@
-const solveStartVector = require('../utils/solveStartVector');
-const driveStraightUntil = require('../utils/driveStraightUntil');
-const isWithinDistance = require('../utils/isWithinDistance');
-const pause = require('../utils/pause');
+const config = require('../config');
+const rotate = require('../utils/motion/rotate');
+// const solveStartVector = require('../utils/solveStartVector');
+const driveStraightUntil = require('../utils/motion/driveStraightUntil');
+const isWithinDistance = require('../utils/sensor/lidar/isWithinDistance');
 
 /**
  * BackAndForth
  * @param {Object} options
  * @return {Object}
  */
-module.exports = (config, log) => {
-  return (options) => {
-    const { distance, speed, timeout } = config;
-    const { controllers, sensors } = options;
-    const { main } = controllers;
-    const { lidar } = sensors;
-    
-    /**
-     * Constructor
-     */
-    function constructor() {
-      log('constructor', 'backAndForth');
-    }
+module.exports = ({ logger, controllers, sensors }) => {
+  const { obstacles, speed } = config;
+  const { main } = controllers;
+  const { lidar } = sensors;
 
-    /**
-     * Start
-     */
-    function start() {
-      log('start', 'backAndForth');
-      
-      const driveStraightFastCondition = isWithinDistance.bind(null, lidar, distance.front.wall.far, 0);
-      const driveStraightFast = driveStraightUntil.bind(null, speed.straight.fast, main, driveStraightFastCondition);
-      
-      const driveStraightSlowCondition = isWithinDistance.bind(null, lidar, distance.front.wall.close, 0);
-      const driveStraightSlow = driveStraightUntil.bind(null, speed.straight.slow, main, driveStraightSlowCondition);
-      
-      solveStartVector(lidar, main)
-        .then(pause.bind(null, timeout.pause))
-        .then(driveStraightFast)
-        .then(driveStraightSlow)
-        .then(main.stop)
-        .then(pause.bind(null, timeout.pause))
-        .then(main.rotateLeft.bind(null, speed.rotate.fast, 180))
-        .then(main.stop.bind(null, 1))
-        .then(pause.bind(null, timeout.pause))
-        .then(driveStraightFast)
-        .then(driveStraightSlow)
-        .then(main.stop)
-        .then(missionComplete);
-    }
+  /**
+   * Constructor
+   */
+  function constructor() {
+    logger.log('constructor', 'backAndForth');
+  }
 
-    /**
-     * Stop
-     */
-    function stop() {
-      log('stop', 'backAndForth');
-      main.stop(1);
-    }
+  /**
+   * Start
+   */
+  async function start() {
+    logger.log('start', 'backAndForth');
 
-    /**
-     * Mission complete
-     */
-    function missionComplete() {
-      log('mission complete', 'backAndForth');
-      stop();
-    }
+    const straightFastUntil = isWithinDistance.bind(null, lidar, obstacles.wall.far, 0);
+    const straightSlowUntil = isWithinDistance.bind(null, lidar, obstacles.wall.close, 0);
 
-    constructor();
+    // await solveStartVector(lidar, main);
+    await driveStraightUntil(speed.straight.fast, main, straightFastUntil);
+    await driveStraightUntil(speed.straight.slow, main, straightSlowUntil);
+    await main.stop();
+    await rotate(main, -180);
+    await driveStraightUntil(speed.straight.fast, main, straightFastUntil);
+    await driveStraightUntil(speed.straight.slow, main, straightSlowUntil);
+    await main.stop();
 
-    return {
-      start,
-      stop,
-    };
+    missionComplete();
+  }
+
+  /**
+   * Stop
+   */
+  function stop() {
+    logger.log('stop', 'backAndForth');
+    main.stop(1);
+  }
+
+  /**
+   * Mission complete
+   */
+  function missionComplete() {
+    logger.log('mission complete', 'backAndForth');
+    stop();
+  }
+
+  constructor();
+
+  return {
+    start,
+    stop,
   };
 };

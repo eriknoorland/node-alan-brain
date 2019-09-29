@@ -3,36 +3,32 @@
  * @param {Object} options
  * @return {Object}
  */
-module.exports = (config, log) => {
-  return (options) => {
-    /**
-     * Constructor
-     */
-    function constructor() {
-      log('constructor', 'cansPickupAndReturn');
+module.exports = ({ logger }) => {
+  /**
+   * Constructor
+   */
+  function constructor() {
+    logger.log('constructor', 'cansPickupAndReturn');
+  }
 
-      // set pixy in right mode (s1)
-    }
+  /**
+   * Start
+   */
+  function start() {
 
-    /**
-     * Start
-     */
-    function start() {
+  }
 
-    }
+  /**
+   * Stop
+   */
+  function stop() {
 
-    /**
-     * Stop
-     */
-    function stop() {
+  }
 
-    }
+  constructor();
 
-    constructor();
-
-    return {
-      start,
-      stop,
-    };
+  return {
+    start,
+    stop,
   };
 };

@@ -1,149 +1,133 @@
-const solveStartVector = require('../utils/solveStartVector');
-const driveStraightUntil = require('../utils/driveStraightUntil');
-const isWithinDistance = require('../utils/isWithinDistance');
-const isAtNumTicks = require('../utils/isAtNumTicks');
-const pause = require('../utils/pause');
+const config = require('../config');
+const rotate = require('../utils/motion/rotate');
+// const solveStartVector = require('../utils/solveStartVector');
+const isAtNumTicks = require('../utils/motion/isAtNumTicks');
+const driveStraightUntil = require('../utils/motion/driveStraightUntil');
+const isWithinDistance = require('../utils/sensor/lidar/isWithinDistance');
 
 /**
  * tTime
  * @param {Object} options
  * @return {Object}
  */
-module.exports = (config, log) => {
-  return (options) => {
-    const { distance, speed } = config;
-    const { controllers, sensors } = options;
-    const { main } = controllers;
-    const { encoders, lidar } = sensors;
+module.exports = ({ logger, controllers, sensors }) => {
+  const { obstacles, speed } = config;
+  const { main } = controllers;
+  const { lidar } = sensors;
 
-    let rightEncoderCountTemp
-    let rightEncoderCount = 0;
+  let encoderCountTemp;
 
-    /**
-     * Constructor
-     */
-    function constructor() {
-      log('constructor', 'tTime');
-    }
+  /**
+   * Constructor
+   */
+  function constructor() {
+    logger.log('constructor', 'tTime');
+  }
 
-    /**
-     * Start
-     */
-    function start() {
-      log('start', 'tTime');
-      
-      const driveTillWallFastCondition = isWithinDistance.bind(null, lidar, distance.front.wall.far, 0);
-      const driveTillWallFast = driveStraightUntil.bind(null, speed.straight.fast, main, driveTillWallFastCondition);
-      
-      const driveTillWallSlowCondition = isWithinDistance.bind(null, lidar, distance.front.wall.close, 0);
-      const driveTillWallSlow = driveStraightUntil.bind(null, speed.straight.slow, main, driveTillWallSlowCondition);
-      
-      solveStartVector(lidar, main)
-        .then(main.enableTicks)
-        .then(countTicks)
-        .then(driveTillWallFast)
-        .then(driveTillWallSlow)
-        .then(main.stop)
-        .then(saveCountedTicks)
-        .then(pause.bind(null, config.timeout.pause))
-        .then(main.rotateLeft.bind(null, speed.rotate.fast, 180))
-        .then(main.stop.bind(null, 1))
-        .then(pause.bind(null, config.timeout.pause))
-        .then(driveTillNumTicks.bind(null, 0.5))
-        .then(main.stop)
-        .then(pause.bind(null, config.timeout.pause))
-        .then(main.rotateRight.bind(null, speed.rotate.fast, 90))
-        .then(main.stop.bind(null, 1))
-        .then(countTicks)
-        .then(pause.bind(null, config.timeout.pause))
-        .then(driveTillWallFast)
-        .then(driveTillWallSlow)
-        .then(main.stop)
-        .then(pause.bind(null, config.timeout.pause))
-        .then(saveCountedTicks)
-        .then(main.rotateLeft.bind(null, speed.rotate.fast, 180))
-        .then(main.stop.bind(null, 1))
-        .then(pause.bind(null, config.timeout.pause))
-        .then(driveTillNumTicks.bind(null, 1))
-        .then(main.stop)
-        .then(pause.bind(null, config.timeout.pause))
-        .then(main.rotateRight.bind(null, speed.rotate.fast, 90))
-        .then(main.stop.bind(null, 1))
-        .then(pause.bind(null, config.timeout.pause))
-        .then(driveTillWallFast)
-        .then(driveTillWallSlow)
-        .then(main.stop)
-        .then(main.disableTicks)
-        .then(missionComplete);
-    }
+  /**
+   * Start
+   */
+  async function start() {
+    logger.log('start', 'tTime');
 
-    /**
-     * Stop
-     */
-    function stop() {
-      log('stop', 'tTime');
+    const driveUntillWallFast = isWithinDistance.bind(null, lidar, obstacles.wall.far, 0);
+    const driveUntillWallSlow = isWithinDistance.bind(null, lidar, obstacles.wall.close, 0);
+    let numTicks = 0;
 
-      main.stop(1);
-      
-      rightEncoderCount = 0;
-      rightEncoderCountTemp = 0;
-    }
+    // await solveStartVector(lidar, main);
+    await main.enableTicks();
+    await countTicks();
+    await driveStraightUntil(speed.straight.fast, main, driveUntillWallFast);
+    await driveStraightUntil(speed.straight.slow, main, driveUntillWallSlow);
+    await main.stop();
+    numTicks = await getCountedTicks();
+    await rotate(main, -180);
+    await main.stop(1);
+    await driveUntillNumTicks(numTicks, 0.5);
+    await main.stop();
+    await rotate(main, 90);
+    await main.stop(1);
+    await countTicks();
+    await driveStraightUntil(speed.straight.fast, main, driveUntillWallFast);
+    await driveStraightUntil(speed.straight.slow, main, driveUntillWallSlow);
+    await main.stop();
+    numTicks = await getCountedTicks();
+    await rotate(main, -180);
+    await main.stop(1);
+    await driveUntillNumTicks(numTicks, 1);
+    await main.stop();
+    await rotate(main, 90);
+    await main.stop(1);
+    await driveStraightUntil(speed.straight.fast, main, driveUntillWallFast);
+    await driveStraightUntil(speed.straight.slow, main, driveUntillWallSlow);
+    await main.stop();
+    await main.disableTicks();
 
-    /**
-     * 
-     * @param {Number} multiplier
-     * @return {Promise}
-     */
-    function driveTillNumTicks(multiplier) {
-      const target = rightEncoderCount * multiplier;
+    missionComplete();
+  }
 
-      return driveStraightUntil(speed.straight.fast, main, isAtNumTicks.bind(null, main, target));
-    }
+  /**
+   * Stop
+   */
+  function stop() {
+    logger.log('stop', 'tTime');
+    main.stop(1);
+    encoderCountTemp = 0;
+  }
 
-    /**
-     * 
-     * @return {Promise}
-     */
-    function countTicks() {
-      rightEncoderCountTemp = 0;
+  /**
+   *
+   * @param {Number} numTicks
+   * @param {Number} multiplier
+   * @return {Promise}
+   */
+  function driveUntillNumTicks(numTicks, multiplier) {
+    const target = numTicks * multiplier;
 
-      main.on('ticks', onTicksData);
+    return driveStraightUntil(speed.straight.fast, main, isAtNumTicks.bind(null, main, target));
+  }
 
-      return Promise.resolve();
-    }
+  /**
+   * Starts counting encoder ticks
+   * @return {Promise}
+   */
+  function countTicks() {
+    encoderCountTemp = 0;
+    main.on('ticks', onTicksData);
 
-    /**
-     * 
-     * @return {Promise}
-     */
-    function saveCountedTicks() {
-      main.off('ticks', onTicksData);
-      rightEncoderCount = rightEncoderCountTemp;
+    return Promise.resolve();
+  }
 
-      return Promise.resolve();
-    }
+  /**
+   * Resolves the number of counted ticks
+   * @return {Promise}
+   */
+  function getCountedTicks() {
+    main.off('ticks', onTicksData);
 
-    /**
-     * Ticks data event handler
-     * @param {Object} data
-     */
-    function onTicksData({ right }) {
-      rightEncoderCountTemp += right;
-    }
+    return Promise.resolve(encoderCountTemp);
+  }
 
-    /**
-     * Mission complete
-     */
-    function missionComplete() {
-      log('mission complete', 'tTime');
-      stop();
-    }
+  /**
+   * Ticks data event handler
+   * @param {Object} data
+   */
+  function onTicksData({ right }) {
+    encoderCountTemp += right;
+  }
 
-    constructor();
+  /**
+   * Mission complete
+   */
+  function missionComplete() {
+    logger.log('mission complete', 'tTime');
+    stop();
+  }
 
-    return {
-      start,
-      stop,
-    };
+  constructor();
+
+  return {
+    start,
+    stop,
   };
 };

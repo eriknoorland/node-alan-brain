@@ -1,3 +1,5 @@
+/* globals arguments */
+
 const debounce = (func, wait, immediate) => {
   let timeout;
 
@@ -14,10 +16,10 @@ const debounce = (func, wait, immediate) => {
     };
 
     const callNow = immediate && !timeout;
-    
+
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
-    
+
     if (callNow) {
       func.apply(context, args);
     }

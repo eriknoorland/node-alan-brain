@@ -8,6 +8,7 @@ module.exports = {
   },
   speed: { // cms/s
     straight: {
+      max: 23, // FIXME is it 23?
       fast: 20,
       medium: 15,
       slow: 10,
@@ -20,16 +21,11 @@ module.exports = {
     rotate: {
       fast: 10,
       slow: 5,
+      correction: 1,
     },
     lineFollowing: 15,
   },
   distance: { // mm
-    front: {
-      wall: {
-        far: 750,
-        close: 300,
-      },
-    },
     gap: {
       width: 4, // cm (options: 30, 15, 8, 4)
     },
@@ -40,6 +36,10 @@ module.exports = {
     },
   },
   obstacles: {
+    wall: {
+      close: 300,
+      far: 750,
+    },
     can: {
       diameter: 6.5, // cm
     },

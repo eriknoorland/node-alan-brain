@@ -5,8 +5,6 @@
  * @param {Number} max
  * @return {Number}
  */
-const constrain = (value, min, max) => {
-  return Math.min(Math.max(parseInt(value), min), max);
-}
+const constrain = (value, min, max) => Math.min(Math.max(parseInt(value, 10), min), max);
 
 module.exports = constrain;

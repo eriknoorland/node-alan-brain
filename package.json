@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",
@@ -28,5 +29,11 @@
     "serialport": "^7.1.5",
     "shelljs": "^0.8.3",
     "socket.io": "^2.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^6.4.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^10.0.0"
   }
 }

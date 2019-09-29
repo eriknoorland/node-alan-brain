@@ -1,3 +1,4 @@
+const config = require('../config');
 const constrain = require('../utils/constrain');
 
 /**
@@ -5,98 +6,97 @@ const constrain = require('../utils/constrain');
  * @param {Object} options
  * @return {Object}
  */
-module.exports = (config, log) => {
-  return ({ controllers, sensors }) => {
-    const { speed, pid } = config;
-    const { main } = controllers;
-    const { camera } = sensors;
-    const startDelay = 1500;
+module.exports = ({ logger, controllers, sensors }) => {
+  const { speed, pid } = config;
+  const { main } = controllers;
+  const { camera } = sensors;
+  const startDelay = 1500;
 
-    let isRunning = false;
-    let heartbeat;
-    let centerX;
+  let isRunning = false;
+  let heartbeat;
+  let centerX;
 
-    /**
-     * Constructor
-     */
-    function constructor() {
-      log('constructor', 'lineFollower');
+  /**
+   * Constructor
+   */
+  function constructor() {
+    logger.log('constructor', 'lineFollower');
+  }
+
+  /**
+   * Start
+   */
+  function start() {
+    camera.on('line', onLineData);
+    camera.on('stateChange', onStateChangeData);
+    camera.setState('line', { tilt: 170 })
+      .then(onLineStateSet);
+  }
+
+  /**
+   * Line state set event handler
+   */
+  function onLineStateSet() {
+    setTimeout(() => { isRunning = true; }, startDelay);
+  }
+
+  /**
+   * Stop
+   */
+  function stop() {
+    isRunning = false;
+
+    camera.off('line', onLineData);
+    camera.off('stateChange', onStateChangeData);
+    camera.setState('idle');
+    main.stop();
+
+    setTimeout(main.stop.bind(null, 1), 1000);
+  }
+
+  /**
+   * Mission complete
+   */
+  function missionComplete() {
+    logger.log('mission complete', 'lineFollower');
+    stop();
+  }
+
+  /**
+   * Camera line data event handler
+   * @param {Object} data
+   */
+  function onLineData({ x0, x1 }) {
+    const { Kp } = pid.lineFollowing;
+    const error0 = (x0 - centerX);
+    const error1 = (x1 - centerX);
+    const error = error0 + error1;
+    const leftSpeed = constrain(Math.round(speed.lineFollowing - (error * Kp)), 0, 20);
+    const rightSpeed = constrain(Math.round(speed.lineFollowing + (error * Kp)), 0, 20);
+
+    if (isRunning) {
+      main.drive(leftSpeed, rightSpeed);
     }
 
-    /**
-     * Start
-     */
-    function start() {
-      camera.on('line', onLineData);
-      camera.on('stateChange', onStateChangeData);
-      camera.setState('line', { tilt: 170 })
-        .then(onLineStateSet);
+    if (heartbeat) {
+      clearTimeout(heartbeat);
     }
 
-    /**
-     * Line state set event handler
-     */
-    function onLineStateSet() {
-      setTimeout(() => isRunning = true, startDelay);
-    }
+    heartbeat = setTimeout(missionComplete, 500);
+  }
 
-    /**
-     * Stop
-     */
-    function stop() {
-      isRunning = false;
+  /**
+   * Camera state change data event handler
+   * @param {Object} data
+   */
+  function onStateChangeData({ frameWidth }) {
+    centerX = frameWidth * 0.5;
+  }
 
-      camera.off('line', onLineData);
-      camera.off('stateChange', onStateChangeData);
-      camera.setState('idle');
-      main.stop();
+  constructor();
 
-      setTimeout(main.stop.bind(null, 1), 1000);
-    }
-
-    /**
-     * Mission complete
-     */
-    function missionComplete() {
-      log('mission complete', 'lineFollower');
-      stop();
-    }
-
-    /**
-     * Camera line data event handler
-     * @param {Object} data
-     */
-    function onLineData({ x0, x1 }) {
-      const error0 = (x0 - centerX);
-      const error1 = (x1 - centerX);
-      const error = error0 + error1;
-      const leftSpeed = constrain(Math.round(speed.lineFollowing - (error * pid.lineFollowing.Kp)), 0, 20);
-      const rightSpeed = constrain(Math.round(speed.lineFollowing + (error * pid.lineFollowing.Kp)), 0, 20);
-
-      if (isRunning) {
-        main.drive(leftSpeed, rightSpeed);
-      }
-
-      if (heartbeat) {
-        clearTimeout(heartbeat);
-      }
-
-      heartbeat = setTimeout(missionComplete, 500);
-    }
-
-    /**
-     * Camera state change data event handler
-     * @param {Object} data
-     */
-    function onStateChangeData({ frameWidth }) {
-      centerX = frameWidth * 0.5;
-    }
-
-    constructor();
-
-    return {
-      start,
-      stop,
-    };
+  return {
+    start,
+    stop,
   };
 };

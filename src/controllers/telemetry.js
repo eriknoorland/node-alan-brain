@@ -1,91 +1,86 @@
-const normalizeAngle = require('../utils/normalizeAngle');
+const normalizeAngle = require('../utils/sensor/lidar/normalizeAngle');
 
 /**
  * Telemetry
  * @param {Object} config
  * @return {Object}
  */
-module.exports = (socket, config) => {
-  return ({ sensors }) => {
-    const { encoders, lidar, camera, main } = sensors;
+module.exports = (socket, config, { sensors }) => {
+  const { lidar, camera, main } = sensors;
 
-    let lidarData = {};
-    let cameraData = {};
-    let imuData = {};
-    let tickData = {};
-    let batteryData = {};
-    let lastTimestamp = new Date();
-    let emitInterval;
-    let fps = {};
+  let lidarData = {};
+  let cameraData = {};
+  let imuData = {};
+  let tickData = {};
+  let batteryData = {};
+  let lastTimestamp = new Date();
+  let fps = {};
 
-    /**
-     * Constructor
-     */
-    function constructor() {
-      fpsInterval = setInterval(setFps, config.loopTime);
-      emitInterval = setInterval(emit, 100);
+  /**
+   * Constructor
+   */
+  function constructor() {
+    setInterval(setFps, config.loopTime);
+    setInterval(emit, 100);
 
-      if (lidar) {
-        lidar.on('data', onLidarData);
-      }
-
-      if (camera) {
-        camera.on('stateChange', data => cameraData = data);
-        camera.on('line', data => cameraData = data);
-      }
-
-      if (main) {
-        main.on('imu', ({ heading }) => imuData = { heading });
-        main.on('ticks', ({ right }) => tickData = { right });
-        main.on('battery', ({ voltage }) => batteryData = { voltage });
-      }
+    if (lidar) {
+      lidar.on('data', onLidarData);
     }
 
-    /**
-     * Emit
-     */
-    function emit() {
-      socket.emit('data', {
-        fps: fps,
-        lidar: lidarData,
-        camera: cameraData,
-        imu: imuData,
-        ticks: tickData,
-        battery: batteryData,
-      });
-
-      lidarData = {};
-      cameraData = {};
+    if (camera) {
+      camera.on('stateChange', (data) => { cameraData = data; });
+      camera.on('line', (data) => { cameraData = data; });
     }
 
-    /**
-     * Lidar data event handler
-     * @param {Object} data
-     */
-    function onLidarData({ quality, angle, distance }) {
-      if (quality > 10) {
-        const index = normalizeAngle(Math.round(angle));
-
-        lidarData[index] = distance;
-      }
+    if (main) {
+      main.on('imu', ({ heading }) => { imuData = { heading }; });
+      main.on('ticks', ({ right }) => { tickData = { right }; });
+      main.on('battery', ({ voltage }) => { batteryData = { voltage }; });
     }
+  }
 
-    /**
-     * Sets the fps
-     */
-    function setFps() {
-      const currentTimestamp = new Date();
+  /**
+   * Emit
+   */
+  function emit() {
+    socket.emit('data', {
+      lidar: lidarData,
+      camera: cameraData,
+      imu: imuData,
+      ticks: tickData,
+      battery: batteryData,
+      fps,
+    });
 
-      fps = {
-        target: 1000 / config.loopTime,
-        actual: 1000 / (currentTimestamp - lastTimestamp),
-      };
-      
-      lastTimestamp = currentTimestamp;
-    }
+    lidarData = {};
+    cameraData = {};
+  }
 
-    constructor();
+  /**
+   * Lidar data event handler
+   * @param {Object} data
+   */
+  function onLidarData({ angle, distance }) {
+    const index = normalizeAngle(Math.round(angle));
 
-    return {};
-  };
+    lidarData[index] = distance;
+  }
+
+  /**
+   * Sets the fps
+   */
+  function setFps() {
+    const currentTimestamp = new Date();
+
+    fps = {
+      target: 1000 / config.loopTime,
+      actual: 1000 / (currentTimestamp - lastTimestamp),
+    };
+
+    lastTimestamp = currentTimestamp;
+  }
+
+  constructor();
+
+  return {};
 };

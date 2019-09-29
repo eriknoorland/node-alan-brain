@@ -1,32 +1,27 @@
 require('dotenv').config();
 
-const EventEmitter = require('events');
 const serialport = require('serialport');
 const shell = require('shelljs');
 const express = require('express');
-const app = express();
-const http = require('http').Server(app);
+const http = require('http');
 const bodyParser = require('body-parser');
-const io = require('socket.io')(http);
+const socketio = require('socket.io');
 const rplidar = require('node-rplidar');
 const pixy2 = require('node-pixy2');
 const MainController = require('node-alan-main-controller');
-
 const config = require('./config');
-const log = require('./utils/log')(io);
-const debounce = require('./utils/debounce');
-const countdown = require('./utils/countdown')(log);
-const States = require('./States')(config, log, debounce);
-const telemetryController = require('./controllers/telemetry')(io, config);
+const Logger = require('./utils/logger');
+const countdown = require('./utils/countdown');
+const States = require('./States');
+const telemetryController = require('./controllers/telemetry');
 
-const telemetryOptions = {
-  sensors: {},
-};
-
-const defaultStateOptions = {
-  controllers: {},
-  sensors: {},
-};
+const app = express();
+const server = http.Server(app);
+const io = socketio(server);
+const logger = Logger(io);
+const telemetryOptions = { sensors: {} };
+const defaultStateOptions = { logger, controllers: {}, sensors: {} };
+const startCountDown = countdown(config.timeout.start);
 
 let mainController;
 let state;
@@ -39,27 +34,27 @@ app.use('/api/v1', require('./api/v1'));
  * Init
  */
 function init() {
-  log('init');
-  log('server started', 'telemetry', 'green');
+  logger.log('initialize');
+  logger.log('server started', 'telemetry', 'green');
 
   getUSBDevicePorts()
     .then(initUSBDevices)
     .then(initTelemetry)
     .then(updateStateOptions);
-};
+}
 
 /**
  * Socket connection event handler
  * @param {socket} socket
  */
 function onSocketConnection(socket) {
-  log('client connected', 'telemetry', 'green');
+  logger.log('client connected', 'telemetry', 'green');
 
   socket.on('disconnect', onSocketDisconnect);
   socket.on('start', onStart.bind(null, socket));
   socket.on('stop', onStop);
   socket.on('shutdown', onShutdown);
-};
+}
 
 /**
  * Start event handler
@@ -68,36 +63,41 @@ function onSocketConnection(socket) {
  */
 function onStart(socket, stateIndex) {
   if (stateIndex === null) {
-    log('State argument required', 'error', 'red');
+    logger.log('State argument required', 'error', 'red');
     return;
   }
 
-  log(`state ${stateIndex} selected`);
+  logger.log(`state ${stateIndex} selected`);
 
-  const stateOptions = Object.assign({ socket }, defaultStateOptions);
+  const stateOptions = {
+    ...defaultStateOptions,
+    socket,
+  };
+
   state = States[stateIndex](stateOptions);
 
-  log('start countdown');
+  logger.log('start countdown');
 
-  countdown(config.timeout.start)
+  startCountDown.on('count', (count) => logger.log(`countdown ${count}`, 'app', 'yellow'));
+  startCountDown.start()
     .then(start);
-};
+}
 
 /**
- * Countdown complete handler 
+ * Countdown complete handler
  */
 function start() {
-  log('start');
-  
+  logger.log('start');
+
   state.start();
-};
+}
 
 /**
  * Stop event handler
  */
 function onStop() {
   return new Promise((resolve) => {
-    log('stop');
+    logger.log('stop');
 
     if (state) {
       state.stop();
@@ -108,20 +108,20 @@ function onStop() {
 
     resolve();
   });
-};
+}
 
 /**
  * Shutdown event handler
  */
 function onShutdown() {
-  log('shutdown', 'app', 'red');
-  
+  logger.log('shutdown', 'app', 'red');
+
   mainController.setLedColor(0, 0, 0);
   shell.exec('sudo shutdown -h now');
 }
 
 /**
- * 
+ *
  * @param {String} portName
  * @return {Object}
  */
@@ -130,7 +130,7 @@ function initMainController(portName) {
 
   mainController.init()
     .then(() => {
-      log('main controller initialized!', 'app', 'cyan');
+      logger.log('main controller initialized!', 'app', 'cyan');
       mainController.setLedColor(128, 0, 128);
     });
 
@@ -138,7 +138,7 @@ function initMainController(portName) {
 }
 
 /**
- * 
+ *
  * @param {String} portName
  * @return {Object}
  */
@@ -150,7 +150,7 @@ function initLidar(portName) {
     .then(onLidarHealth)
     .then(lidar.scan)
     .catch(() => {
-      log('Lidar error', 'error', 'red');
+      logger.log('Lidar error', 'error', 'red');
       // process.exit(1);
     });
 
@@ -158,7 +158,7 @@ function initLidar(portName) {
 }
 
 /**
- * 
+ *
  * @param {String} portName
  * @return {Object}
  */
@@ -167,19 +167,19 @@ function initCamera(portName) {
 
   camera.init()
     .then(() => {
-      log('pixy2 initialized!', 'app', 'cyan');
+      logger.log('pixy2 initialized!', 'app', 'cyan');
     });
 
   return camera;
 }
 
 /**
- * 
+ *
  * @param {Object} usbPorts
  * @return {Promise}
  */
 function initUSBDevices(usbPorts) {
-  log('init usb devices');
+  logger.log('initialize usb devices');
 
   return new Promise((resolve) => {
     const resolveObject = {};
@@ -198,44 +198,42 @@ function initUSBDevices(usbPorts) {
 
     resolve(resolveObject);
   });
-};
+}
 
 /**
- * 
+ *
  * @param {Object} usbDevices
  * @return {Promise}
  */
 function initTelemetry(usbDevices) {
-  const { lidar, camera, mainController } = usbDevices;
-
-  log('init sending telemetry data');
+  logger.log('initialize telemetry');
 
   return new Promise((resolve) => {
-    telemetryOptions.sensors.lidar = lidar;
-    telemetryOptions.sensors.camera = camera;
-    telemetryOptions.sensors.main = mainController;
+    telemetryOptions.sensors.lidar = usbDevices.lidar;
+    telemetryOptions.sensors.camera = usbDevices.camera;
+    telemetryOptions.sensors.main = usbDevices.mainController;
 
-    telemetryController(telemetryOptions);
+    telemetryController(io, config, telemetryOptions);
     resolve(usbDevices);
   });
-};
+}
 
 /**
- * 
+ *
  * @param {Object} usbDevices
  * @return {Promise}
  */
 function updateStateOptions(usbDevices) {
-  const { lidar, camera, mainController } = usbDevices;
-  
-  log('update state options');
+  logger.log('update state options');
 
   return new Promise((resolve) => {
-    defaultStateOptions.controllers.main = mainController;
-    defaultStateOptions.sensors.lidar = lidar;
-    defaultStateOptions.sensors.camera = camera;
+    defaultStateOptions.controllers.main = usbDevices.mainController;
+    defaultStateOptions.sensors.lidar = usbDevices.lidar;
+    defaultStateOptions.sensors.camera = usbDevices.camera;
+
+    resolve();
   });
-};
+}
 
 /**
  * Returns an object with a USB port name for each connected device
@@ -255,15 +253,17 @@ function getUSBDevicePorts() {
           case vendorId === '2341' && productId === '0042':
             usbPorts.mainController = comName;
             break;
-            
+
           case vendorId === '0403' && productId === '6001':
             usbPorts.camera = comName;
             break;
+
+          // no default
         }
       });
     }).then(resolve.bind(null, usbPorts));
   });
-};
+}
 
 /**
  * Lidar health handler
@@ -272,31 +272,31 @@ function getUSBDevicePorts() {
 function onLidarHealth(health) {
   return new Promise((resolve, reject) => {
     if (health.status !== 0) { // 0 = good, 1 = warning, 2 = error
-      log(`lidar health: ${health.status}`, 'app', 'red');
+      logger.log(`lidar health: ${health.status}`, 'app', 'red');
       reject();
       return;
     }
 
-    log('lidar initialized!', 'app', 'cyan');
+    logger.log('lidar initialized!', 'app', 'cyan');
     resolve();
   });
-};
+}
 
 /**
  * Socket disconnect event handler
  */
 function onSocketDisconnect() {
-  log('client disconnected', 'telemetry', 'yellow');
+  logger.log('client disconnected', 'telemetry', 'yellow');
 }
 
 /**
  * Before exit event handler
  */
 process.on('beforeExit', () => {
-  main.stop(1);
+  mainController.stop(1);
 });
 
 io.on('connection', onSocketConnection);
 
 // Roll out!
-http.listen(3000, init);
+server.listen(3000, init);

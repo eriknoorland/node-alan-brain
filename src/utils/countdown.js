@@ -1,25 +1,46 @@
+const EventEmitter = require('events');
+
 /**
  * Countdown a second at a time until we hit 0
- * @param {int} count
- * @return {Promise}
+ * @param {Number} count
+ * @return {Object}
  */
-module.exports = (log) => {
-  return (count) => {
-    let remainingCount = count;
-    let interval;
+module.exports = (count) => {
+  const eventEmitter = new EventEmitter();
 
-    log(`countdown ${remainingCount / 1000}`, 'app', 'yellow');
+  /**
+   * Constructor
+   */
+  function constructor() {
+    //
+  }
+
+  /**
+   * Start
+   */
+  function start() {
+    let remainingCount = count;
+
+    eventEmitter.emit('count', remainingCount / 1000);
 
     return new Promise((resolve) => {
-      interval = setInterval(() => {
+      const interval = setInterval(() => {
         remainingCount -= 1000;
-        log(`countdown ${remainingCount / 1000}`, 'app', 'yellow');
+        eventEmitter.emit('count', remainingCount / 1000);
 
         if (remainingCount <= 0) {
           clearInterval(interval);
-          return resolve();
+          resolve();
         }
       }, 1000);
     });
+  }
+
+  constructor();
+
+  return {
+    start,
+    on: eventEmitter.on.bind(eventEmitter),
+    off: eventEmitter.off.bind(eventEmitter),
   };
 };
