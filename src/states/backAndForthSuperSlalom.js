@@ -193,8 +193,8 @@ module.exports = ({ logger, controllers, sensors }) => {
     await main.stop(1);
     await rotate(main, inAngle);
     await main.stop(1);
-    await main.moveForward(speed.straight.precision, crossingDistance);
-    await main.stop(1);
+    await main.moveForward(speed.straight.slow, crossingDistance);
+    await main.stop();
     await rotate(main, outAngle);
     await main.stop(1);
 
