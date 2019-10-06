@@ -12,12 +12,12 @@ const scan = require('../sensor/lidar/scan');
 const gotoStartPosition = async (lidar, main, centerOffset = 0) => {
   let isLedOn = true;
 
-  main.setLedColor.apply(null, config.color.orange);
+  main.setLedColor.apply(null, color.orange);
 
   const ledInterval = setInterval(() => {
     isLedOn = !isLedOn;
-    main.setLedColor.apply(null, isLedOn ? config.color.orange: [0, 0, 01]);
-  }, 750);
+    main.setLedColor.apply(null, isLedOn ? color.orange: [0, 0, 01]);
+  }, 600);
 
   const measurements = await scan(lidar, 2000, 0, {});
   const averagedMeasurements = await averageMeasurements(measurements);

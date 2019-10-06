@@ -95,7 +95,7 @@ const solveStartVector = async (lidar, main) => {
   const ledInterval = setInterval(() => {
     isLedOn = !isLedOn;
     main.setLedColor.apply(null, isLedOn ? config.color.orange: [0, 0, 01]);
-  }, 750);
+  }, 600);
 
   let measurements = {};
   let averagedMeasurements = {};
