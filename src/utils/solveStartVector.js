@@ -32,10 +32,10 @@ const decideAngle = (measurements) => {
   let { angle } = direction;
 
   if (angle > 180) {
-    angle = (180 - (angle - 180)) * -1;
+    angle = (angle - 180) * -1;
   }
 
-  return Promise.resolve(angle);
+  return angle;
 };
 
 /**
@@ -101,9 +101,8 @@ const solveStartVector = async (lidar, main) => {
   await rotate(main, rotationOffset);
 
   averagedMeasurements = await averageMeasurements(measurements);
-  const angle = await decideAngle(averagedMeasurements);
 
-  await rotate(main, angle);
+  await rotate(main, decideAngle(averagedMeasurements));
   await verifyStartVector(lidar, main);
 
   await main.setLedColor.apply(null, config.color.green);
