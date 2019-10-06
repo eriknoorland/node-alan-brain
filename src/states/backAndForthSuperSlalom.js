@@ -1,7 +1,7 @@
 const config = require('../config');
 const rotate = require('../utils/motion/rotate');
-// const solveStartVector = require('../utils/solveStartVector');
-// const gotoStartPosition = require('../utils/gotoStartPosition');
+const solveStartVector = require('../utils/solveStartVector');
+const gotoStartPosition = require('../utils/motion/gotoStartPosition');
 const driveStraightUntil = require('../utils/motion/driveStraightUntil');
 const isWithinDistance = require('../utils/sensor/lidar/isWithinDistance');
 const getAngleDistance = require('../utils/sensor/lidar/getAngleDistance');
@@ -32,8 +32,8 @@ module.exports = ({ logger, controllers, sensors }) => {
     const driveToEndCondition = isWithinDistance.bind(null, lidar, obstacles.wall.close, 0);
     const crossingDistance = Math.floor(robot.diameter + (obstacles.can.diameter * 2));
 
-    // await solveStartVector(lidar, main);
-    // await gotoStartPosition(main, robot.diameter);
+    await solveStartVector(lidar, main);
+    await gotoStartPosition(lidar, main, 20);
     await slalom('Left');
     await slalom('Right');
     await driveStraightUntil(speed.straight.medium, main, driveToEndCondition);

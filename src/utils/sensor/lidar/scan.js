@@ -9,8 +9,8 @@ const normalizeAngle = require('./normalizeAngle');
  * @return {Promise}
  */
 const scan = (lidar, duration, offset = 0, acc = {}) => new Promise((resolve) => {
-  const onLidarData = ({ quality, angle, distance }) => {
-    if (quality > 10) {
+  const onLidarData = ({ angle, distance }) => {
+    if (distance) {
       const index = normalizeAngle(Math.round(angle) + offset);
 
       if (!acc[index]) {
@@ -21,12 +21,14 @@ const scan = (lidar, duration, offset = 0, acc = {}) => new Promise((resolve) =>
     }
   };
 
-  lidar.on('data', onLidarData);
-
-  setTimeout(() => {
+  const onScanComplete = () => {
     lidar.off('data', onLidarData);
     resolve(acc);
-  }, duration);
+  };
+
+  lidar.on('data', onLidarData);
+
+  setTimeout(onScanComplete, duration);
 });
 
 module.exports = scan;

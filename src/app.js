@@ -131,7 +131,7 @@ function initMainController(portName) {
   mainController.init()
     .then(() => {
       logger.log('main controller initialized!', 'app', 'cyan');
-      mainController.setLedColor(128, 0, 128);
+      mainController.setLedColor.apply(null, config.color.green);
     });
 
   return mainController;

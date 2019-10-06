@@ -44,5 +44,10 @@ module.exports = {
       diameter: 6.5, // cm
     },
   },
+  color: {
+    green: [0, 128, 0],
+    orange: [128, 82, 0],
+    red: [128, 0, 0],
+  },
   loopTime: 1000 / 50, // ms
 };
