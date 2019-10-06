@@ -88,7 +88,14 @@ const verifyStartVector = async (lidar, main) => {
  * @return {Promise}
  */
 const solveStartVector = async (lidar, main) => {
+  let isLedOn = true;
+
   main.setLedColor.apply(null, config.color.orange);
+
+  const ledInterval = setInterval(() => {
+    isLedOn = !isLedOn;
+    main.setLedColor.apply(null, isLedOn ? config.color.orange: [0, 0, 01]);
+  }, 750);
 
   let measurements = {};
   let averagedMeasurements = {};
@@ -106,6 +113,7 @@ const solveStartVector = async (lidar, main) => {
   await rotate(main, angle);
   await verifyStartVector(lidar, main);
 
+  clearInterval(ledInterval);
   main.setLedColor.apply(null, config.color.green);
 
   return Promise.resolve();

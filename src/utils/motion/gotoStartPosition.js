@@ -1,4 +1,4 @@
-const { speed } = require('../../config');
+const { color, speed } = require('../../config');
 const averageMeasurements = require('../sensor/lidar/averageMeasurements');
 const getAngleDistance = require('../sensor/lidar/getAngleDistance');
 const scan = require('../sensor/lidar/scan');
@@ -10,6 +10,15 @@ const scan = require('../sensor/lidar/scan');
  * @return {Promise}
  */
 const gotoStartPosition = async (lidar, main, centerOffset = 0) => {
+  let isLedOn = true;
+
+  main.setLedColor.apply(null, config.color.orange);
+
+  const ledInterval = setInterval(() => {
+    isLedOn = !isLedOn;
+    main.setLedColor.apply(null, isLedOn ? config.color.orange: [0, 0, 01]);
+  }, 750);
+
   const measurements = await scan(lidar, 2000, 0, {});
   const averagedMeasurements = await averageMeasurements(measurements);
   const rearDistance = getAngleDistance(averagedMeasurements, 180) / 10;
@@ -36,6 +45,9 @@ const gotoStartPosition = async (lidar, main, centerOffset = 0) => {
   await main.stop(1);
   await main.rotate(speed.rotate.slow, angle * -1);
   await main.stop(1);
+
+  clearInterval(ledInterval);
+  main.setLedColor.apply(null, color.green);
 
   return Promise.resolve();
 };
