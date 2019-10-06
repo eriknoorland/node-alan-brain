@@ -32,7 +32,7 @@ const decideAngle = (measurements) => {
   let { angle } = direction;
 
   if (angle > 180) {
-    angle = (angle - 180) * -1;
+    angle = (180 - (angle - 180)) * -1;
   }
 
   return angle;
