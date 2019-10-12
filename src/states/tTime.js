@@ -1,6 +1,7 @@
 const config = require('../config');
 const rotate = require('../utils/motion/rotate');
-// const solveStartVector = require('../utils/solveStartVector');
+const solveStartVector = require('../utils/solveStartVector');
+const gotoStartPosition = require('../utils/motion/gotoStartPosition');
 const isAtNumTicks = require('../utils/motion/isAtNumTicks');
 const driveStraightUntil = require('../utils/motion/driveStraightUntil');
 const isWithinDistance = require('../utils/sensor/lidar/isWithinDistance');
@@ -34,7 +35,8 @@ module.exports = ({ logger, controllers, sensors }) => {
     const driveUntillWallSlow = isWithinDistance.bind(null, lidar, obstacles.wall.close, 0);
     let numTicks = 0;
 
-    // await solveStartVector(lidar, main);
+    await solveStartVector(lidar, main);
+    await gotoStartPosition(lidar, main);
     await main.enableTicks();
     await countTicks();
     await driveStraightUntil(speed.straight.fast, main, driveUntillWallFast);
