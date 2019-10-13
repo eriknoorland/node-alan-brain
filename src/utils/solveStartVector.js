@@ -43,7 +43,7 @@ const decideAngle = (measurements) => {
  * @return {Promise}
  */
 const verifyStartVector = async (lidar, main) => {
-  const forwardDistance = 25;
+  const forwardDistance = 20;
   let measurements = {};
   let averagedMeasurements = {};
 

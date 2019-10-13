@@ -16,6 +16,7 @@ module.exports = ({ logger, controllers, sensors }) => {
   const { main } = controllers;
   const { lidar } = sensors;
   const lidarData = {};
+  const startOffset = 18;
 
   /**
    * Constructor
@@ -32,38 +33,18 @@ module.exports = ({ logger, controllers, sensors }) => {
     const driveToEndCondition = isWithinDistance.bind(null, lidar, obstacles.wall.close, 0);
 
     await solveStartVector(lidar, main);
-    await gotoStartPosition(lidar, main, robot.diameter);
+    await gotoStartPosition(lidar, main, startOffset);
     await slalom('Left');
     await slalom('Right');
     await driveStraightUntil(speed.straight.medium, main, driveToEndCondition);
     await main.stop();
-    await rotate(main, -90);
-    await main.stop(1);
     await crossover();
-    await main.stop();
-    await rotate(main, -90);
-    await main.stop(1);
     await slalom('Left');
     await slalom('Right');
     await driveStraightUntil(speed.straight.medium, main, driveToEndCondition);
     await main.stop();
 
     missionComplete();
-  }
-
-  /**
-   * crossover
-   * @return {Promise}
-   */
-  async function crossover() {
-    const distanceRight = getAngleDistance(lidarData, 90);
-    const distanceLeft = getAngleDistance(lidarData, 270);
-    const distanceFromCenter = (distanceLeft - distanceRight) / 2;
-    const crossingDistance = Math.ceil(robot.diameter + distanceFromCenter);
-
-    await main.moveForward(speed.straight.slow, crossingDistance);
-
-    return Promise.resolve();
   }
 
   /**
@@ -92,7 +73,7 @@ module.exports = ({ logger, controllers, sensors }) => {
 
     return new Promise((resolve) => {
       const interval = setInterval(() => {
-        const angleDistance = getAngleDistance(lidarData, angle);
+        const angleDistance = getAngleDistance(lidarData, angle, 2);
 
         if (angleDistance && angleDistance < (referenceDistance - 100)) {
           canDistance = Math.min(canDistance, angleDistance);
@@ -112,18 +93,24 @@ module.exports = ({ logger, controllers, sensors }) => {
    * @return {Promise}
    */
   async function findGap(side, targetGapWidth, referenceDistance, count = 0) {
-    const driveSpeed = count ? speed.straight.precision : speed.straight.medium;
+    const driveSpeed = count ? speed.straight.slow : speed.straight.medium;
     const checkAngle = side === 'Left' ? 270 : 90;
     const driveStraightCondition = driveToNextCan.bind(null, referenceDistance, checkAngle);
 
-    if (count > 0) {
-      await main.moveForward(driveSpeed, Math.round(obstacles.can.diameter));
+    if (!count) {
+      setTimeout(() => {
+        main.setLedColor.apply(null, config.color.red);
+      }, 0);
     }
 
     await driveStraightUntil(driveSpeed, main, driveStraightCondition);
 
     if (await checkForGap(side, referenceDistance)) {
-      await main.stop();
+      setTimeout(() => {
+        main.setLedColor.apply(null, config.color.green);
+      }, 0);
+
+      await main.moveForward(driveSpeed, 1);
 
       return Promise.resolve();
     }
@@ -166,7 +153,7 @@ module.exports = ({ logger, controllers, sensors }) => {
           const gapSize = getGapSize(filteredMeasurements, angle, angle - 270);
 
           if (gapSize) {
-            logger.log(`it seems there is an obstacle at ${angle} degrees at a distance of ${gapSize} cm`);
+            console.log(`obstacle at ${angle}° with a size of ${gapSize.toFixed(2)}cm`);
             return Promise.resolve(gapSize);
           }
         }
@@ -175,7 +162,7 @@ module.exports = ({ logger, controllers, sensors }) => {
           const gapSize = getGapSize(filteredMeasurements, angle, 90 - angle);
 
           if (gapSize) {
-            logger.log(`it seems there is an obstacle at ${angle} degrees at a distance of ${gapSize} cm`);
+            console.log(`obstacle at ${angle}° with a size of ${gapSize.toFixed(2)}cm`);
             return Promise.resolve(gapSize);
           }
         }
@@ -203,7 +190,7 @@ module.exports = ({ logger, controllers, sensors }) => {
     const crossingDistance = Math.round((obstacleDistance * 2) + (obstacles.can.diameter / 2));
     const gapCenter = Math.ceil(Math.round(obstacles.can.diameter / 2) + (targetGapWidth / 2));
 
-    await main.moveForward(speed.straight.precision, gapCenter);
+    await main.moveForward(speed.straight.slow, gapCenter);
     await main.stop(1);
     await rotate(main, inAngle);
     await main.stop(1);
@@ -220,12 +207,17 @@ module.exports = ({ logger, controllers, sensors }) => {
    * @return {Promise}
    */
   async function crossover() {
-    const distanceRight = getAngleDistance(lidarData, 90);
-    const distanceLeft = getAngleDistance(lidarData, 270);
+    const distanceRight = getAngleDistance(lidarData, 90) / 10;
+    const distanceLeft = getAngleDistance(lidarData, 270) / 10;
     const distanceFromCenter = (distanceLeft - distanceRight) / 2;
-    const crossingDistance = Math.ceil(robot.diameter + distanceFromCenter);
+    const crossingDistance = Math.ceil(startOffset + distanceFromCenter);
 
+    await rotate(main, -90);
+    await main.stop(1);
     await main.moveForward(speed.straight.slow, crossingDistance);
+    await main.stop();
+    await rotate(main, -90);
+    await main.stop(1);
 
     return Promise.resolve();
   }

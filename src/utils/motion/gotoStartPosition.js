@@ -13,7 +13,7 @@ const gotoStartPosition = async (lidar, main, centerOffset = 0) => {
   const measurements = await scan(lidar, 2000, 0, {});
   const averagedMeasurements = await averageMeasurements(measurements);
   const rearDistance = getAngleDistance(averagedMeasurements, 180) / 10;
-  const reverseDistance = rearDistance > 15 ? 15 : 0;
+  const reverseDistance = rearDistance > 10 ? 10 : 0;
 
   if (reverseDistance > 0) {
     await main.moveBackward(speed.straight.precision, reverseDistance);
