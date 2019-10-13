@@ -37,6 +37,8 @@ function init() {
   logger.log('initialize');
   logger.log('server started', 'telemetry', 'green');
 
+  startCountDown.on('count', (count) => logger.log(`countdown ${count}`, 'app', 'yellow'));
+
   getUSBDevicePorts()
     .then(initUSBDevices)
     .then(initTelemetry)
@@ -78,7 +80,6 @@ function onStart(socket, stateIndex) {
 
   logger.log('start countdown');
 
-  startCountDown.on('count', (count) => logger.log(`countdown ${count}`, 'app', 'yellow'));
   startCountDown.start()
     .then(start);
 }

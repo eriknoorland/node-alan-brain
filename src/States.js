@@ -1,7 +1,7 @@
 const remote = require('./states/remote');
 const backAndForth = require('./states/backAndForth');
-const backAndForthSlalom = require('./states/backAndForthSlalom');
-const backAndForthSuperSlalom = require('./states/backAndForthSuperSlalom');
+const slalom = require('./states/slalom');
+const superSlalom = require('./states/superSlalom');
 const lineFollower = require('./states/lineFollower');
 const lineFollowerObstacle = require('./states/lineFollowerObstacle');
 const tTime = require('./states/tTime');
@@ -12,8 +12,8 @@ const cansPickupAndReturn = require('./states/cansPickupAndReturn');
 module.exports = [
   remote,
   backAndForth,
-  backAndForthSlalom,
-  backAndForthSuperSlalom,
+  slalom,
+  superSlalom,
   lineFollower,
   lineFollowerObstacle,
   tTime,

@@ -1,5 +1,5 @@
 /**
- * backAndForthSlalom
+ * slalom
  * @param {Object} options
  * @return {Object}
  */
@@ -8,7 +8,7 @@ module.exports = ({ logger }) => {
    * Constructor
    */
   function constructor() {
-    logger.log('constructor', 'backAndForthSlalom');
+    logger.log('constructor', 'slalom');
   }
 
   /**

@@ -7,7 +7,7 @@ const isWithinDistance = require('../utils/sensor/lidar/isWithinDistance');
 const getAngleDistance = require('../utils/sensor/lidar/getAngleDistance');
 
 /**
- * backAndForthSuperSlalom
+ * superSlalom
  * @param {Object} options
  * @return {Object}
  */
@@ -21,7 +21,7 @@ module.exports = ({ logger, controllers, sensors }) => {
    * Constructor
    */
   function constructor() {
-    logger.log('constructor', 'backAndForthSuperSlalom');
+    logger.log('constructor', 'superSlalom');
     lidar.on('data', onLidarData);
   }
 
@@ -30,17 +30,16 @@ module.exports = ({ logger, controllers, sensors }) => {
    */
   async function start() {
     const driveToEndCondition = isWithinDistance.bind(null, lidar, obstacles.wall.close, 0);
-    const crossingDistance = Math.floor(robot.diameter + (obstacles.can.diameter * 2));
 
     await solveStartVector(lidar, main);
-    await gotoStartPosition(lidar, main, 20);
+    await gotoStartPosition(lidar, main, robot.diameter);
     await slalom('Left');
     await slalom('Right');
     await driveStraightUntil(speed.straight.medium, main, driveToEndCondition);
     await main.stop();
     await rotate(main, -90);
     await main.stop(1);
-    await main.moveForward(speed.straight.slow, crossingDistance);
+    await crossover();
     await main.stop();
     await rotate(main, -90);
     await main.stop(1);
@@ -50,6 +49,21 @@ module.exports = ({ logger, controllers, sensors }) => {
     await main.stop();
 
     missionComplete();
+  }
+
+  /**
+   * crossover
+   * @return {Promise}
+   */
+  async function crossover() {
+    const distanceRight = getAngleDistance(lidarData, 90);
+    const distanceLeft = getAngleDistance(lidarData, 270);
+    const distanceFromCenter = (distanceLeft - distanceRight) / 2;
+    const crossingDistance = Math.ceil(robot.diameter + distanceFromCenter);
+
+    await main.moveForward(speed.straight.slow, crossingDistance);
+
+    return Promise.resolve();
   }
 
   /**
@@ -202,6 +216,21 @@ module.exports = ({ logger, controllers, sensors }) => {
   }
 
   /**
+   * crossover
+   * @return {Promise}
+   */
+  async function crossover() {
+    const distanceRight = getAngleDistance(lidarData, 90);
+    const distanceLeft = getAngleDistance(lidarData, 270);
+    const distanceFromCenter = (distanceLeft - distanceRight) / 2;
+    const crossingDistance = Math.ceil(robot.diameter + distanceFromCenter);
+
+    await main.moveForward(speed.straight.slow, crossingDistance);
+
+    return Promise.resolve();
+  }
+
+  /**
    * Lidar data event handler
    * @param {Object} data
    */
@@ -215,7 +244,7 @@ module.exports = ({ logger, controllers, sensors }) => {
    * Stop
    */
   function stop() {
-    logger.log('stop', 'backAndForthSuperSlalom');
+    logger.log('stop', 'superSlalom');
     lidar.off('data', onLidarData);
     main.stop(1);
   }
@@ -224,7 +253,7 @@ module.exports = ({ logger, controllers, sensors }) => {
    * Mission complete
    */
   function missionComplete() {
-    logger.log('mission complete', 'backAndForthSuperSlalom');
+    logger.log('mission complete', 'superSlalom');
     stop();
   }
 
