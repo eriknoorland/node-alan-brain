@@ -153,7 +153,7 @@ module.exports = ({ logger, controllers, sensors }) => {
           const gapSize = getGapSize(filteredMeasurements, angle, angle - 270);
 
           if (gapSize) {
-            console.log(`obstacle at ${angle}° with a size of ${gapSize.toFixed(2)}cm`);
+            logger.log(`obstacle at ${angle}° with a size of ${gapSize.toFixed(2)}cm`, 'superSlalom');
             return Promise.resolve(gapSize);
           }
         }
@@ -162,7 +162,7 @@ module.exports = ({ logger, controllers, sensors }) => {
           const gapSize = getGapSize(filteredMeasurements, angle, 90 - angle);
 
           if (gapSize) {
-            console.log(`obstacle at ${angle}° with a size of ${gapSize.toFixed(2)}cm`);
+            logger.log(`obstacle at ${angle}° with a size of ${gapSize.toFixed(2)}cm`, 'superSlalom');
             return Promise.resolve(gapSize);
           }
         }

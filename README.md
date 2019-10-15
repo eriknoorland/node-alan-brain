@@ -1,4 +1,7 @@
-## start application
+## Start application
 ```
-npm start
+$ npm start
 ```
+
+## Telemetry
+Telemetry is available at `alan.local:3000`
