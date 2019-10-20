@@ -37,7 +37,7 @@ module.exports = {
   },
   obstacles: {
     wall: {
-      close: 300,
+      close: 350,
       far: 750,
     },
     can: {
