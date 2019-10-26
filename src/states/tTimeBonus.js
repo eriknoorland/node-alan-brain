@@ -5,6 +5,7 @@ const rad2deg = require('../utils/math/rad2deg');
 const getAngleDistance = require('../utils/sensor/lidar/getAngleDistance');
 const getShortestDistance = require('../utils/sensor/lidar/getShortestDistance');
 const driveStraightUntil = require('../utils/motion/driveStraightUntil');
+const isAtNumTicks = require('../utils/motion/isAtNumTicks');
 const isWithinDistance = require('../utils/sensor/lidar/isWithinDistance');
 
 /**
@@ -13,10 +14,12 @@ const isWithinDistance = require('../utils/sensor/lidar/isWithinDistance');
  * @return {Object}
  */
 module.exports = ({ logger, controllers, sensors }) => {
-  const { robot, speed, obstacles } = config;
+  const { speed, obstacles } = config;
   const { main } = controllers;
   const { lidar } = sensors;
   const lidarData = {};
+
+  let encoderCountTemp;
 
   /**
    * Constructor
@@ -34,8 +37,24 @@ module.exports = ({ logger, controllers, sensors }) => {
     const gap = { minAngle: 0, maxAngle: 0 };
     const scanRange = 50;
 
-    // drive into t-area
-    // main.stop();
+    const driveUntillWallFast = isWithinDistance.bind(null, lidar, obstacles.wall.far, 0);
+    const driveUntillWallSlow = isWithinDistance.bind(null, lidar, obstacles.wall.close, 0);
+    let numTicks = 0;
+
+    await solveStartVector(lidar, main);
+    await gotoStartPosition(lidar, main);
+    await main.enableTicks();
+    await countTicks();
+    await driveStraightUntil(speed.straight.fast, main, driveUntillWallFast);
+    await driveStraightUntil(speed.straight.slow, main, driveUntillWallSlow);
+    await main.stop();
+    numTicks = await getCountedTicks();
+    await rotate(main, -180);
+    await main.stop(1);
+    await driveUntillNumTicks(numTicks, 0.5);
+    await main.stop();
+    await rotate(main, 90);
+    await main.stop(1);
 
     const getScanRange = (angle) => angle >= (360 - scanRange) || angle <= scanRange;
 
@@ -86,10 +105,17 @@ module.exports = ({ logger, controllers, sensors }) => {
     await rotate(main, turnAngle * -1);
     await driveStraightUntil(speed.straight.medium, main, driveToEndCondition);
     await main.stop();
+
     await rotate(main, 180);
-    await main.moveForward(speed.straight.medium, 90);
+    await driveStraightUntil(speed.straight.fast, main, driveUntillWallFast);
+    await driveStraightUntil(speed.straight.slow, main, driveUntillWallSlow);
     await main.stop();
+    await rotate(main, 90);
     await main.stop(1);
+    await driveStraightUntil(speed.straight.fast, main, driveUntillWallFast);
+    await driveStraightUntil(speed.straight.slow, main, driveUntillWallSlow);
+    await main.stop();
+    await main.disableTicks();
 
     missionComplete();
   }
@@ -111,6 +137,47 @@ module.exports = ({ logger, controllers, sensors }) => {
     logger.log('stop', 'tTimeBonus');
     lidar.off('data', onLidarData);
     main.stop(1);
+  }
+
+  /**
+   *
+   * @param {Number} numTicks
+   * @param {Number} multiplier
+   * @return {Promise}
+   */
+  function driveUntillNumTicks(numTicks, multiplier) {
+    const target = numTicks * multiplier;
+
+    return driveStraightUntil(speed.straight.fast, main, isAtNumTicks.bind(null, main, target));
+  }
+
+  /**
+   * Starts counting encoder ticks
+   * @return {Promise}
+   */
+  function countTicks() {
+    encoderCountTemp = 0;
+    main.on('ticks', onTicksData);
+
+    return Promise.resolve();
+  }
+
+  /**
+   * Resolves the number of counted ticks
+   * @return {Promise}
+   */
+  function getCountedTicks() {
+    main.off('ticks', onTicksData);
+
+    return Promise.resolve(encoderCountTemp);
+  }
+
+  /**
+   * Ticks data event handler
+   * @param {Object} data
+   */
+  function onTicksData({ right }) {
+    encoderCountTemp += right;
   }
 
   /**
