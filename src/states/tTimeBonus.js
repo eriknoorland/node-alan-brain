@@ -1,7 +1,9 @@
 const config = require('../config');
-const rotate = require('../utils/motion/rotate');
 const deg2rad = require('../utils/math/deg2rad');
 const rad2deg = require('../utils/math/rad2deg');
+const rotate = require('../utils/motion/rotate');
+const solveStartVector = require('../utils/solveStartVector');
+const gotoStartPosition = require('../utils/motion/gotoStartPosition');
 const getAngleDistance = require('../utils/sensor/lidar/getAngleDistance');
 const getShortestDistance = require('../utils/sensor/lidar/getShortestDistance');
 const driveStraightUntil = require('../utils/motion/driveStraightUntil');
@@ -56,6 +58,8 @@ module.exports = ({ logger, controllers, sensors }) => {
     await rotate(main, 90);
     await main.stop(1);
 
+    await main.moveForward(speed.straight.medium, 60);
+
     const getScanRange = (angle) => angle >= (360 - scanRange) || angle <= scanRange;
 
     const scanData2Array = (acc, a) => {
@@ -93,7 +97,7 @@ module.exports = ({ logger, controllers, sensors }) => {
 
     const gapAngle = Math.round((gap.minAngle + gap.maxAngle) / 2);
     const normalizedGapAngle = (360 + gapAngle) % 360;
-    const sideDistanceOffset = Math.floor(gapAngle / 12) * 10;
+    const sideDistanceOffset = Math.floor(gapAngle / 15) * 10;
     const sideDistance = (distanceToObstacleLine * Math.tan(deg2rad(normalizedGapAngle))) + sideDistanceOffset;
     const forwardDistance = distanceToObstacleLine - 250;
     const turnAngle = Math.ceil(rad2deg(Math.atan(sideDistance / forwardDistance)));
@@ -108,7 +112,7 @@ module.exports = ({ logger, controllers, sensors }) => {
 
     await rotate(main, 180);
     await driveStraightUntil(speed.straight.fast, main, driveUntillWallFast);
-    await driveStraightUntil(speed.straight.slow, main, driveUntillWallSlow);
+    // await driveStraightUntil(speed.straight.slow, main, driveUntillWallSlow);
     await main.stop();
     await rotate(main, 90);
     await main.stop(1);

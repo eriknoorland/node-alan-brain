@@ -16,7 +16,7 @@ module.exports = ({ logger, controllers, sensors }) => {
   const { main } = controllers;
   const { lidar } = sensors;
   const lidarData = {};
-  const startOffset = 18;
+  const startOffset = 20;
 
   /**
    * Constructor
