@@ -35,7 +35,7 @@ module.exports = (socket, config, { sensors }) => {
     if (main) {
       main.on('imu', ({ heading }) => { imuData = { heading }; });
       main.on('ticks', ({ right }) => { tickData = { right }; });
-      main.on('battery', ({ voltage }) => { batteryData = { voltage }; });
+      main.on('battery', ({ voltage }) => { batteryData = { numCells: 4, voltage }; });
     }
   }
 

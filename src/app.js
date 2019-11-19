@@ -56,6 +56,8 @@ function onSocketConnection(socket) {
   socket.on('start', onStart.bind(null, socket));
   socket.on('stop', onStop);
   socket.on('shutdown', onShutdown);
+
+  socket.emit('setup', { states: States });
 }
 
 /**
@@ -76,7 +78,7 @@ function onStart(socket, stateIndex) {
     socket,
   };
 
-  state = States[stateIndex](stateOptions);
+  state = States[stateIndex].module(stateOptions);
 
   logger.log('start countdown');
 
