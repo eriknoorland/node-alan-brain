@@ -60,6 +60,7 @@ function onSocketConnection(socket) {
   socket.emit('setup', {
     states: States,
     sensors: ['lidar', 'imu', 'camera', 'battery'],
+    name: 'Alan',
   });
 }
 
