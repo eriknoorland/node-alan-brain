@@ -57,7 +57,10 @@ function onSocketConnection(socket) {
   socket.on('stop', onStop);
   socket.on('shutdown', onShutdown);
 
-  socket.emit('setup', { states: States });
+  socket.emit('setup', {
+    states: States,
+    sensors: ['lidar', 'imu', 'camera', 'battery'],
+  });
 }
 
 /**
